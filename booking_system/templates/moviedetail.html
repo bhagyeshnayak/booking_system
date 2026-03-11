@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Movie Detail</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body style="background:#0d0d0f;color:white;font-family:Arial">
+
+<h1 id="movieTitle">Loading movie...</h1>
+
+<div>
+    <p>Price per seat: ₹250</p>
+
+    <button id="seatDown">-</button>
+    <span id="seatCount">1</span>
+    <button id="seatUp">+</button>
+
+    <h3>Total: ₹<span id="totalPrice">250</span></h3>
+
+    <button id="bookBtn">Book Now</button>
+</div>
+
+<script>
+
+const API = "http://127.0.0.1:8000/api";
+const MOVIE_ID = {{ movie_id }};
+const PRICE = 250;
+
+let seatCount = 1;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const res = await fetch(`${API}/movies/${MOVIE_ID}/`);
+        if (!res.ok) throw new Error('Failed to fetch movie');
+        const data = await res.json();
+        document.getElementById("movieTitle").innerText = data.title;
+    } catch (e) {
+        document.getElementById("movieTitle").innerText = "Movie Not Found";
+    }
+});
+
+document.getElementById("seatUp").onclick = () =>{
+    seatCount++;
+    update();
+}
+
+document.getElementById("seatDown").onclick = () =>{
+    if(seatCount>1) seatCount--;
+    update();
+}
+
+function update(){
+    document.getElementById("seatCount").innerText = seatCount;
+    document.getElementById("totalPrice").innerText = seatCount * PRICE;
+}
+
+document.getElementById("bookBtn").onclick = async () =>{
+
+    const token = localStorage.getItem("cinebook_token");
+
+    const res = await fetch(`${API}/bookings/`,{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+            "Authorization":"Bearer "+token
+        },
+        body:JSON.stringify({
+            movie:MOVIE_ID,
+            seats:seatCount
+        })
+    })
+
+    const data = await res.json();
+
+    console.log(data);
+    alert("Booking created. OTP printed in terminal.");
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CineBook — Movie Booking</title>
+  <meta name="description" content="Book movie tickets online with CineBook. Browse latest movies and book your seats instantly." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2" />
+  <style>
+    /* Critical inline CSS - always applied before external sheet loads */
+    .hidden { display: none !important; }
+    body { background: #0d0d0f; color: #f0f0f0; margin: 0; font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAV ── -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">🎬</span>
+        <span class="logo-text">CineBook</span>
+      </a>
+      <div class="nav-search">
+        <input type="text" id="searchInput" placeholder="Search movies…" autocomplete="off" />
+        <span class="search-icon">⌕</span>
+      </div>
+      <div class="nav-actions" id="navActions">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1 class="hero-title">Book Your <span class="gradient-text">Perfect</span> Movie Night</h1>
+      <p class="hero-subtitle">Discover, explore, and book the latest blockbusters — all in one place.</p>
+      <div class="genre-filters" id="genreFilters">
+        <button class="genre-chip active" data-genre="all">All</button>
+      </div>
+    </div>
+    <div class="hero-blob"></div>
+  </section>
+
+  <!-- ── MOVIES SECTION ── -->
+  <main class="movies-section">
+    <div class="section-header">
+      <h2 class="section-title">Now Showing</h2>
+      <span class="movie-count" id="movieCount"></span>
+    </div>
+    <div class="movies-grid" id="moviesContainer">
+      <!-- skeleton cards while loading -->
+      <div class="movie-card skeleton"></div>
+      <div class="movie-card skeleton"></div>
+      <div class="movie-card skeleton"></div>
+      <div class="movie-card skeleton"></div>
+      <div class="movie-card skeleton"></div>
+      <div class="movie-card skeleton"></div>
+    </div>
+    <div class="no-results hidden" id="noResults">
+      <div class="no-results-icon">🎭</div>
+      <p>No movies found.</p>
+    </div>
+  </main>
+
+  <!-- ── BOOKING MODAL ── -->
+  <div class="modal-overlay hidden" id="bookingModal">
+    <div class="modal">
+      <button class="modal-close" id="closeModal" aria-label="Close">✕</button>
+
+      <div class="modal-poster-strip" id="modalPosterStrip"></div>
+
+      <div class="modal-body">
+        <div class="modal-movie-info">
+          <h2 id="modalTitle">Movie Name</h2>
+          <div class="modal-meta">
+            <span id="modalGenre"></span>
+            <span class="dot">•</span>
+            <span id="modalDuration"></span>
+            <span class="dot">•</span>
+            <span class="badge" id="modalRating"></span>
+          </div>
+          <p id="modalDesc" class="modal-desc"></p>
+        </div>
+
+        <form class="booking-form" id="bookingForm">
+          <h3 class="form-section-title">Book Your Seats</h3>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bookName">Your Name</label>
+              <input type="text" id="bookName" placeholder="Full name" required />
+            </div>
+            <div class="form-group">
+              <label for="bookEmail">Email</label>
+              <input type="email" id="bookEmail" placeholder="you@email.com" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Select Seats</label>
+            <div class="seat-selector">
+              <button type="button" class="seat-btn" id="seatDown">−</button>
+              <span class="seat-count" id="seatCount">1</span>
+              <button type="button" class="seat-btn" id="seatUp">+</button>
+            </div>
+          </div>
+
+          <div class="screen-area">
+            <div class="screen-label">SCREEN</div>
+            <div class="seats-grid" id="seatsGrid"></div>
+          </div>
+
+          <input type="hidden" id="selectedMovieId" />
+          <input type="hidden" id="selectedSeats" value="1" />
+
+          <button type="submit" class="btn-book" id="submitBooking">
+            <span class="btn-text">Confirm Booking</span>
+            <span class="btn-loader hidden" id="btnLoader">●</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AUTH MODAL ── -->
+  <div class="modal-overlay hidden" id="authModal">
+    <div class="modal modal--auth">
+      <button class="modal-close" id="closeAuth" aria-label="Close">✕</button>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" data-tab="login">Login</button>
+        <button class="auth-tab" id="tabRegister" data-tab="register">Register</button>
+      </div>
+
+      <!-- Login form -->
+      <form class="auth-form" id="loginForm">
+        <h2 class="auth-title">Welcome Back</h2>
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required />
+        </div>
+        <p class="auth-error hidden" id="loginError"></p>
+        <button type="submit" class="btn-book">Sign In</button>
+      </form>
+
+      <!-- Register form -->
+      <form class="auth-form hidden" id="registerForm">
+        <h2 class="auth-title">Create Account</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regUsername">Username</label>
+            <input type="text" id="regUsername" placeholder="johndoe" required />
+          </div>
+          <div class="form-group">
+            <label for="regEmail">Email</label>
+            <input type="email" id="regEmail" placeholder="you@email.com" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <input type="password" id="regPassword" placeholder="••••••••" required />
+        </div>
+        <p class="auth-error hidden" id="registerError"></p>
+        <button type="submit" class="btn-book">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── OTP MODAL ── -->
+  <div class="modal-overlay hidden" id="otpModal">
+    <div class="modal modal--otp">
+      <div class="otp-icon">📧</div>
+      <h2>Check Your Email</h2>
+      <p class="otp-sub">An OTP was sent to <strong id="otpEmailDisplay"></strong></p>
+      <div class="otp-inputs" id="otpInputs">
+        <input class="otp-digit" maxlength="1" type="tel" />
+        <input class="otp-digit" maxlength="1" type="tel" />
+        <input class="otp-digit" maxlength="1" type="tel" />
+        <input class="otp-digit" maxlength="1" type="tel" />
+        <input class="otp-digit" maxlength="1" type="tel" />
+        <input class="otp-digit" maxlength="1" type="tel" />
+      </div>
+      <p class="auth-error hidden" id="otpError"></p>
+      <button class="btn-book" id="verifyOtpBtn">Verify OTP</button>
+    </div>
+  </div>
+
+  <!-- ── SUCCESS TOAST ── -->
+  <div class="toast hidden" id="toast">
+    <span class="toast-icon">✅</span>
+    <span class="toast-msg" id="toastMsg">Booking confirmed!</span>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 CineBook. All rights reserved.</p>
+  </footer>
+
+  <script src="{% static 'js/movies.js' %}"></script>
+</body>
+</html>
