@@ -158,17 +158,36 @@
     .form-group input:focus { outline: none; border-color: #f84464; box-shadow: 0 0 0 3px rgba(248,68,100,0.2); }
     .form-group input::placeholder { color: #3a3a4a; }
 
-    .seat-row { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
-    .seat-label { font-size: 0.8rem; font-weight: 600; color: #a0a0b0; flex: 1; }
-    .seat-ctrl { display: flex; align-items: center; gap: 12px; }
-    .seat-btn {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: #1c1c20; border: 1px solid rgba(255,255,255,0.1);
-      color: #f0f0f0; font-size: 1.1rem; cursor: pointer;
-      transition: all 0.15s;
+    /* Seat Map Styles */
+    .screen-curve {
+      text-align: center; font-size: 0.75rem; color: #a0a0b0; letter-spacing: 2px;
+      margin-bottom: 24px; padding-bottom: 10px;
+      border-bottom: 2px solid rgba(255,255,255,0.1);
+      border-radius: 50%; width: 80%; margin-left: auto; margin-right: auto;
     }
-    .seat-btn:hover { border-color: #f84464; color: #f84464; }
-    .seat-count { font-size: 1.2rem; font-weight: 800; min-width: 24px; text-align: center; }
+    .seat-map {
+      display: flex; flex-direction: column; gap: 8px; align-items: center;
+      margin-bottom: 20px;
+      max-height: 250px; overflow-y: auto; padding-right: 8px;
+    }
+    .seat-map::-webkit-scrollbar { width: 4px; }
+    .seat-map::-webkit-scrollbar-thumb { background: #3a3a4a; border-radius: 4px; }
+    .seat-row-letters { display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .row-label { width: 20px; font-size: 0.8rem; font-weight: 700; color: #5a5a70; text-align: right; margin-right: 6px; }
+    .seat-box {
+      width: 22px; height: 22px; border-radius: 4px;
+      background: #1c1c20; border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.55rem; font-weight: 700; color: transparent;
+    }
+    .seat-box:hover:not(.booked) { border-color: #f84464; color: #f0f0f0; }
+    .seat-box.selected { background: #f84464; border-color: #f84464; color: #fff; box-shadow: 0 0 10px rgba(248,68,100,0.4); }
+    .seat-box.booked { background: #2a2a35; border-color: #2a2a35; cursor: not-allowed; opacity: 0.5; }
+    
+    .seat-legend { display: flex; justify-content: center; gap: 16px; font-size: 0.75rem; color: #a0a0b0; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-item .seat-box { width: 14px; height: 14px; cursor: default; pointer-events: none; }
 
     .price-row {
       display: flex; justify-content: space-between; align-items: center;
@@ -310,12 +329,17 @@
           <label for="bookEmail">Email</label>
           <input type="email" id="bookEmail" placeholder="you@email.com" required />
         </div>
-        <div class="seat-row">
-          <span class="seat-label">Seats</span>
-          <div class="seat-ctrl">
-            <button type="button" class="seat-btn" id="seatDown">−</button>
-            <span class="seat-count" id="seatCount">1</span>
-            <button type="button" class="seat-btn" id="seatUp">+</button>
+        <div class="seat-selection-container" style="margin-bottom: 20px;">
+          <label class="seat-label" style="display: block; font-size: 0.8rem; font-weight: 600; color: #a0a0b0; margin-bottom: 12px;">Select Seats</label>
+          <div class="screen-curve">SCREEN THIS WAY</div>
+          <div class="seat-map" id="seatMap">
+            <!-- Seats rendered via JS -->
+            <div style="color: #a0a0b0; font-size: 0.8rem; text-align: center; padding: 20px;">Loading seats...</div>
+          </div>
+          <div class="seat-legend">
+            <div class="legend-item"><div class="seat-box available"></div> Available</div>
+            <div class="legend-item"><div class="seat-box selected"></div> Selected</div>
+            <div class="legend-item"><div class="seat-box booked"></div> Booked</div>
           </div>
         </div>
         <div class="price-row">
@@ -401,12 +425,12 @@
 
   <script>
     const API      = 'http://127.0.0.1:8000/api';
-    const MOVIE_ID = {{ movie_id }};
+    const MOVIE_ID = "{{ movie_id }}";
     const PRICE    = 250;
 
     let currentUser = JSON.parse(localStorage.getItem('cinebook_user') || 'null');
     let authToken   = localStorage.getItem('cinebook_token') || null;
-    let seatCount   = 1;
+    let selectedSeats = [];
     let bookingId   = null;
     let bookEmail   = '';
     let movie       = null;
@@ -415,10 +439,11 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderNav();
       loadMovie();
-      setupSeatCtrl();
+      setupSeatMap();
       setupBookingForm();
       setupOtp();
       setupAuthModal();
+      updateSeatUI();
     });
 
     /* ─── NAV ─── */
@@ -555,17 +580,72 @@
     }
 
     /* ─── SEAT CONTROL ─── */
-    function setupSeatCtrl() {
-      document.getElementById('seatDown').onclick = () => {
-        if (seatCount > 1) { seatCount--; updateSeatUI(); }
-      };
-      document.getElementById('seatUp').onclick = () => {
-        if (seatCount < 10) { seatCount++; updateSeatUI(); }
-      };
+    async function setupSeatMap() {
+      try {
+        const res = await fetch(`${API}/movies/${MOVIE_ID}/seats/`);
+        const data = await res.json();
+        // Handle paginated or unpaginated response
+        const seats = data.results ? data.results : data;
+        renderSeatMap(seats);
+      } catch (err) {
+        document.getElementById('seatMap').innerHTML = '<div style="color:#f87171;">Failed to load seats</div>';
+      }
     }
+
+    function renderSeatMap(seats) {
+      const seatMapEl = document.getElementById('seatMap');
+      if (!seats || seats.length === 0) {
+        seatMapEl.innerHTML = '<div style="color:#a0a0b0;">No seats available.</div>';
+        return;
+      }
+      
+      const rows = {};
+      seats.forEach(s => {
+        const row = s.seat_number.charAt(0);
+        if(!rows[row]) rows[row] = [];
+        rows[row].push(s);
+      });
+      
+      let html = '';
+      Object.keys(rows).sort().forEach(r => {
+        rows[r].sort((a,b) => parseInt(a.seat_number.substring(1)) - parseInt(b.seat_number.substring(1)));
+        html += `<div class="seat-row-letters"><div class="row-label">${r}</div>`;
+        rows[r].forEach(seat => {
+          const bookedClass = seat.is_booked ? 'booked' : 'available';
+          html += `<div class="seat-box ${bookedClass}" data-seat="${seat.seat_number}">${seat.seat_number}</div>`;
+        });
+        html += `</div>`;
+      });
+      
+      seatMapEl.innerHTML = html;
+      
+      document.querySelectorAll('.seat-box.available').forEach(box => {
+        box.addEventListener('click', () => {
+          const sn = box.dataset.seat;
+          if(selectedSeats.includes(sn)) {
+            selectedSeats = selectedSeats.filter(s => s !== sn);
+            box.classList.remove('selected');
+          } else {
+            if(selectedSeats.length >= 10) { showToast('Max 10 seats allowed', true); return; }
+            selectedSeats.push(sn);
+            box.classList.add('selected');
+          }
+          updateSeatUI();
+        });
+      });
+    }
+
     function updateSeatUI() {
-      document.getElementById('seatCount').textContent = seatCount;
-      document.getElementById('totalPrice').textContent = `₹${seatCount * PRICE}`;
+      const count = selectedSeats.length;
+      document.getElementById('totalPrice').textContent = count > 0 ? `₹${count * PRICE}` : '₹0';
+      const btn = document.getElementById('confirmBtn');
+      if(count === 0) {
+        btn.disabled = true;
+        btn.innerHTML = '🎟️ Select Seats to Book';
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = `🎟️ Book ${count} Ticket${count > 1 ? 's' : ''}`;
+      }
     }
 
     /* ─── BOOKING ─── */
@@ -573,6 +653,8 @@
       document.getElementById('bookingForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!currentUser) { openAuth('login'); showToast('Please login first', true); return; }
+        if (selectedSeats.length === 0) { showToast('Please select at least one seat', true); return; }
+        
         const name  = document.getElementById('bookName').value.trim();
         const email = document.getElementById('bookEmail').value.trim();
         if (!name || !email) { showToast('Fill in all fields', true); return; }
@@ -584,7 +666,13 @@
           const res = await fetch(`${API}/bookings/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-            body: JSON.stringify({ movie: MOVIE_ID, name, email, seats: seatCount }),
+            body: JSON.stringify({ 
+              movie: MOVIE_ID, 
+              name, 
+              email, 
+              seats: selectedSeats.length,
+              seat_numbers: selectedSeats.join(',')
+            }),
           });
           if (res.status === 401) {
             alert("Session expired. Please log in again.");
@@ -612,8 +700,23 @@
     function setupOtp() {
       const digits = document.querySelectorAll('.otp-digit');
       digits.forEach((inp, i) => {
+        inp.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pData = e.clipboardData.getData('text');
+          const nums = pData.match(/\d/g);
+          if (nums) {
+            let j = 0;
+            while(j < nums.length && i + j < digits.length) {
+              digits[i + j].value = nums[j];
+              j++;
+            }
+            if(i + j < digits.length) digits[i + j].focus();
+            else digits[digits.length - 1].focus();
+          }
+        });
         inp.addEventListener('input', () => {
           inp.value = inp.value.replace(/\D/, '');
+          if (inp.value.length > 1) inp.value = inp.value.slice(0, 1);
           if (inp.value && i < digits.length - 1) digits[i + 1].focus();
         });
         inp.addEventListener('keydown', (e) => {

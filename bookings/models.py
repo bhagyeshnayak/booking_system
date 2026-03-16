@@ -11,9 +11,10 @@ class Movie(models.Model):
     title = models.CharField(max_length=200)
 
     description = models.TextField(blank=True)
+
     poster = models.URLField(default="")
 
-    duration = models.IntegerField(default=120)  # in minutes
+    duration = models.IntegerField(default=120)  # minutes
 
     genre = models.CharField(max_length=100, default="")
 
@@ -45,14 +46,17 @@ class Booking(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='bookings',
+        related_name="bookings",
         null=True,
         blank=True
     )
 
     name = models.CharField(max_length=100, default="")
     email = models.EmailField(default="")
+
     seats = models.IntegerField(default=1)
+    
+    seat_numbers = models.CharField(max_length=255, default="")
 
     movie = models.ForeignKey(
         Movie,
@@ -65,34 +69,35 @@ class Booking(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='PENDING'
+        default="PENDING"
     )
 
-    otp = models.CharField(
-        max_length=6,
-        blank=True,
-        null=True
-    )
+    otp = models.CharField(max_length=6, blank=True, null=True)
 
-    otp_created_at = models.DateTimeField(
-        blank=True,
-        null=True
-    )
+    otp_created_at = models.DateTimeField(blank=True, null=True)
+
+    qr_code = models.ImageField(upload_to="qr_codes/", blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.booking_id} - {self.user.email}"
+        if self.user:
+            return f"{self.booking_id} - {self.user}"
+        return str(self.booking_id)
 
 
+# ==========================
+# Seat Model
+# ==========================
 class Seat(models.Model):
+
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+
     seat_number = models.CharField(max_length=10)
+
     is_booked = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.movie.title} - {self.seat_number}"
-     
-    

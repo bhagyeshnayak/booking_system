@@ -1,56 +1,235 @@
 {% load static %}
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>My Bookings</title>
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <meta charset="UTF-8">
+  <title>My Bookings — CineBook</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2">
+  <style>
+    body { background: #0d0d0f; color: #f0f0f0; margin: 0; font-family: 'Inter', sans-serif; }
+    .page-header {
+      padding: 120px 40px 40px; text-align: center;
+      background: linear-gradient(to bottom, #1a0a12, #0d0d0f);
+    }
+    .page-header h1 { font-size: 2.5rem; font-weight: 800; margin-bottom: 12px; }
+    .page-header p { color: #a0a0b0; font-size: 1.1rem; }
+    
+    .bookings-container {
+      max-width: 1200px; margin: 0 auto; padding: 0 40px 80px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 32px;
+    }
+    .ticket-card {
+      background: #141416; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; overflow: hidden; position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .ticket-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.6); }
+    .ticket-header {
+      height: 140px; background-size: cover; background-position: center; position: relative;
+    }
+    .ticket-header::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to top, #141416, transparent);
+    }
+    .status-badge {
+      position: absolute; top: 16px; right: 16px; z-index: 2;
+      padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .status-confirmed { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
+    .status-pending { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+    .status-cancelled { background: rgba(248,68,100,0.2); color: #f84464; border: 1px solid rgba(248,68,100,0.4); }
+    
+    .ticket-body { padding: 24px; }
+    .ticket-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 20px; line-height: 1.3; }
+    
+    .ticket-details { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .detail-item { display: flex; flex-direction: column; gap: 4px; }
+    .detail-label { font-size: 0.75rem; color: #5a5a70; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .detail-value { font-size: 0.95rem; font-weight: 600; color: #e0e0e0; }
+    
+    .ticket-actions {
+      padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1);
+      display: flex; gap: 12px;
+    }
+    .btn-action {
+      flex: 1; padding: 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      text-align: center; cursor: pointer; transition: all 0.2s; text-decoration: none;
+      display: inline-flex; justify-content: center; align-items: center; gap: 8px;
+    }
+    .btn-download {
+      background: rgba(248,68,100,0.1); color: #f84464; border: 1px solid rgba(248,68,100,0.3);
+    }
+    .btn-download:hover { background: rgba(248,68,100,0.2); }
+    .btn-cancel {
+      background: transparent; color: #a0a0b0; border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-cancel:hover { background: rgba(255,255,255,0.05); color: #f0f0f0; }
+    
+    .empty-state {
+      grid-column: 1 / -1; text-align: center; padding: 80px 20px;
+    }
+    .empty-state h3 { font-size: 1.5rem; margin-bottom: 12px; color: #f0f0f0; }
+    .empty-state p { color: #a0a0b0; margin-bottom: 24px; }
+    .btn-home {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #f84464, #ff6b35); color: #fff;
+      padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 700;
+      box-shadow: 0 6px 24px rgba(248,68,100,0.35); transition: transform 0.2s;
+    }
+    .btn-home:hover { transform: translateY(-2px); }
+  </style>
 </head>
+<body>
 
-<body style="background:#0d0d0f;color:white;font-family:Arial">
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">🎬</span>
+        <span class="logo-text">CineBook</span>
+      </a>
+      <div class="nav-actions" id="navActions"></div>
+    </div>
+  </nav>
 
-<h1>🎬 My Bookings</h1>
+  <header class="page-header">
+    <h1>My Tickets</h1>
+    <p>View and manage your movie bookings</p>
+  </header>
 
-<div id="bookingList"></div>
+  <div class="bookings-container" id="bookingList">
+    <!-- Loading skeleton -->
+    <div style="color: #a0a0b0; text-align: center; grid-column: 1/-1;">Loading your tickets...</div>
+  </div>
 
-<script>
+  <script>
+    const API = "http://127.0.0.1:8000/api";
+    const token = localStorage.getItem("cinebook_token");
+    const currentUser = JSON.parse(localStorage.getItem('cinebook_user') || 'null');
 
-const API = "http://127.0.0.1:8000/api"
-const token = localStorage.getItem("cinebook_token")
+    document.addEventListener('DOMContentLoaded', () => {
+      renderNav();
+      if (!token) {
+        window.location.href = '/';
+        return;
+      }
+      loadBookings();
+    });
 
-async function loadBookings(){
+    function renderNav() {
+      const el = document.getElementById('navActions');
+      if (currentUser) {
+        el.innerHTML = `
+          <div class="nav-user">
+            <div class="nav-avatar">${currentUser.username[0].toUpperCase()}</div>
+            <span class="nav-username">${currentUser.username}</span>
+            <button class="nav-logout" id="logoutBtn">Logout</button>
+          </div>`;
+        document.getElementById('logoutBtn').onclick = () => {
+          localStorage.clear(); window.location.href = '/';
+        };
+      }
+    }
 
- const res = await fetch(`${API}/my-bookings/`,{
-   headers:{
-    "Authorization":"Bearer "+token
-   }
- })
+    async function loadBookings(){
+      try {
+        const res = await fetch(`${API}/my-bookings/`, {
+          headers: { "Authorization": "Bearer " + token }
+        });
+        if(res.status === 401) {
+          localStorage.clear();
+          window.location.href = '/';
+          return;
+        }
+        const bookings = await res.json();
+        renderBookings(bookings);
+      } catch (e) {
+        console.error("Failed to load bookings", e);
+        document.getElementById("bookingList").innerHTML = `<div class="empty-state"><h3>Error</h3><p>Could not load bookings. Please try again later.</p></div>`;
+      }
+    }
 
- const bookings = await res.json()
+    function renderBookings(bookings) {
+      const container = document.getElementById("bookingList");
+      container.innerHTML = "";
 
- const container = document.getElementById("bookingList")
+      if(bookings.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>No Tickets Found</h3>
+            <p>You haven't booked any movies yet.</p>
+            <a href="/" class="btn-home">Browse Movies</a>
+          </div>
+        `;
+        return;
+      }
 
- container.innerHTML = ""
+      bookings.forEach(b => {
+        const date = new Date(b.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        const bgImg = b.movie_poster || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80';
+        
+        let statusClass = 'status-pending';
+        if(b.status === 'CONFIRMED') statusClass = 'status-confirmed';
+        if(b.status === 'CANCELLED') statusClass = 'status-cancelled';
 
- bookings.forEach(b=>{
+        let actionsHtml = '';
+        if (b.status === 'CONFIRMED') {
+          actionsHtml = `<a href="${API}/bookings/${b.booking_id}/pdf/" target="_blank" class="btn-action btn-download">⏬ Download PDF</a>`;
+        } else if (b.status === 'PENDING') {
+           actionsHtml = `<button class="btn-action btn-cancel" onclick="cancelBooking('${b.booking_id}')">Cancel</button>`;
+        }
 
-   container.innerHTML += `
-   <div style="border:1px solid gray;padding:20px;margin:10px">
+        container.innerHTML += `
+          <div class="ticket-card">
+            <div class="ticket-header" style="background-image: url('${bgImg}');">
+              <span class="status-badge ${statusClass}">${b.status}</span>
+            </div>
+            <div class="ticket-body">
+              <h3 class="ticket-title">${b.movie_title || 'Movie Title'}</h3>
+              
+              <div class="ticket-details">
+                <div class="detail-item">
+                  <span class="detail-label">Date Booked</span>
+                  <span class="detail-value">${date}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Ticket ID</span>
+                  <span class="detail-value" style="font-size:0.75rem;">...${b.booking_id.substring(24)}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Quantity</span>
+                  <span class="detail-value">${b.seats} Tickets</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Seats</span>
+                  <span class="detail-value">${b.seat_numbers || 'Not selected'}</span>
+                </div>
+              </div>
 
-     <h3>${b.movie_title}</h3>
-     <p>Seats: ${b.seats}</p>
-     <p>Status: ${b.status}</p>
-     <p>Booking ID: ${b.booking_id}</p>
+              ${actionsHtml ? `<div class="ticket-actions">${actionsHtml}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
 
-   </div>
-   `
- })
-
-}
-
-loadBookings()
-
-</script>
-
+    async function cancelBooking(id) {
+        if(!confirm("Are you sure you want to cancel this booking?")) return;
+        try {
+            const res = await fetch(`${API}/bookings/${id}/cancel/`, {
+                method: 'POST',
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if(res.ok) {
+                loadBookings();
+            } else {
+                alert("Could not cancel booking.");
+            }
+        } catch(e) { console.error(e); }
+    }
+  </script>
 </body>
 </html>

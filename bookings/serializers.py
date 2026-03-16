@@ -3,6 +3,8 @@ from .models import Booking, Movie ,Seat
 
 
 class BookingSerializer(serializers.ModelSerializer):
+    movie_title = serializers.CharField(source='movie.title', read_only=True)
+    movie_poster = serializers.URLField(source='movie.poster', read_only=True)
 
     class Meta:
         model = Booking
@@ -10,9 +12,12 @@ class BookingSerializer(serializers.ModelSerializer):
             'id',
             'booking_id',
             'movie',
+            'movie_title',
+            'movie_poster',
             'name',
             'email',
             'seats',
+            'seat_numbers',
             'status',
             'created_at',
             'updated_at',

@@ -13,6 +13,7 @@ from .views import (
     VerifyBookingOTPView,
     CancelBookingView,
     movie_detail_page,
+    DownloadTicketPDFView,
 )
 
 urlpatterns = [
@@ -29,6 +30,7 @@ urlpatterns = [
     path('bookings/<uuid:booking_id>/verify-otp/', VerifyBookingOTPView.as_view(), name="verify-otp"),
 
     path('bookings/<uuid:booking_id>/cancel/', CancelBookingView.as_view(), name="cancel-booking"),
+    path('bookings/<uuid:booking_id>/pdf/', DownloadTicketPDFView.as_view(), name="download-ticket-pdf"),
     path('movies/<int:movie_id>/seats/', SeatListView.as_view(), name="seat-list"),
     path("my-bookings/", UserBookingsView.as_view(), name="my-bookings"),
    
