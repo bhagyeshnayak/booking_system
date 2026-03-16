@@ -80,7 +80,7 @@ Then click **Commit changes**.
 💡 **Important for your portfolio (since you want internships):**
 
 A good README increases **recruiter impression** a lot.
-shown
+
 
 
 
