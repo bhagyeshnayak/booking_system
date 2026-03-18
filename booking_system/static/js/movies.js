@@ -48,6 +48,7 @@ function renderNavActions() {
   if (currentUser) {
     el.innerHTML = `
       <div class="nav-user">
+        <a href="/my-bookings/" style="color:#f84464; font-weight:bold; margin-right:15px; text-decoration:none;">My Tickets</a>
         <div class="nav-avatar">${currentUser.username ? currentUser.username[0].toUpperCase() : '?'}</div>
         <span class="nav-username">${currentUser.username || currentUser.email}</span>
         <button class="nav-logout" id="logoutBtn">Logout</button>

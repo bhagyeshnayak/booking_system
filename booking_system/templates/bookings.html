@@ -124,6 +124,7 @@
       if (currentUser) {
         el.innerHTML = `
           <div class="nav-user">
+            <a href="/my-bookings/" style="color:#f84464; font-weight:bold; margin-right:15px; text-decoration:none;">My Tickets</a>
             <div class="nav-avatar">${currentUser.username[0].toUpperCase()}</div>
             <span class="nav-username">${currentUser.username}</span>
             <button class="nav-logout" id="logoutBtn">Logout</button>
@@ -144,7 +145,10 @@
           window.location.href = '/';
           return;
         }
-        const bookings = await res.json();
+        let bookings = await res.json();
+        if (bookings.results) {
+          bookings = bookings.results;
+        }
         renderBookings(bookings);
       } catch (e) {
         console.error("Failed to load bookings", e);
@@ -177,7 +181,7 @@
 
         let actionsHtml = '';
         if (b.status === 'CONFIRMED') {
-          actionsHtml = `<a href="${API}/bookings/${b.booking_id}/pdf/" target="_blank" class="btn-action btn-download">⏬ Download PDF</a>`;
+          actionsHtml = `<button class="btn-action btn-download" onclick="downloadPdf('${b.booking_id}')">⏬ Download PDF</button>`;
         } else if (b.status === 'PENDING') {
            actionsHtml = `<button class="btn-action btn-cancel" onclick="cancelBooking('${b.booking_id}')">Cancel</button>`;
         }
@@ -228,6 +232,33 @@
             } else {
                 alert("Could not cancel booking.");
             }
+        } catch(e) { console.error(e); }
+    }
+
+    async function downloadPdf(id) {
+        try {
+            const res = await fetch(`${API}/bookings/${id}/pdf/`, {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if(res.status === 401) {
+                alert("Session expired. Please log in again.");
+                localStorage.clear();
+                window.location.href = '/';
+                return;
+            }
+            if(!res.ok) {
+                alert("Could not download pdf.");
+                return;
+            }
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `ticket_${id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
         } catch(e) { console.error(e); }
     }
   </script>

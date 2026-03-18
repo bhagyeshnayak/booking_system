@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 
 from .models import Booking, Movie, Seat
-from .models import Booking, Movie, Seat
 from .serializers import BookingSerializer, MovieSerializer, SeatSerializer
 from .utils import generate_qr_code, generate_ticket_pdf, send_ticket_email
 from django.http import HttpResponse
@@ -50,8 +49,13 @@ class BookingListCreateView(generics.ListCreateAPIView):
         
         seat_numbers = self.request.data.get("seat_numbers", "")
 
+        name = self.request.user.first_name or self.request.user.username
+        email = self.request.user.email
+
         serializer.save(
             user=self.request.user,
+            name=name,
+            email=email,
             otp=otp,
             otp_created_at=timezone.now(),
             seat_numbers=seat_numbers
