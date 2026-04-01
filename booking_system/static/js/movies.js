@@ -24,6 +24,10 @@ let bookingState = {
   bookingId:  null,
 };
 
+let authState = {
+  pendingEmail: null,
+};
+
 // ── INIT ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderNavActions();
@@ -64,10 +68,14 @@ function renderNavActions() {
 }
 
 function attachNavListeners() {
-  // Search
+  // Search (Debounced so we don't spam the server on every tiny keystroke)
+  let _searchTimeout = null;
   document.getElementById('searchInput').addEventListener('input', (e) => {
+    clearTimeout(_searchTimeout);
     searchQuery = e.target.value.toLowerCase();
-    applyFilters();
+    _searchTimeout = setTimeout(() => {
+      fetchMovies(searchQuery, activeGenre !== 'all' ? activeGenre : null);
+    }, 400); // Wait 400ms before hitting the backend API
   });
 }
 
@@ -80,25 +88,39 @@ function logout() {
 }
 
 // ── MOVIES ─────────────────────────────────────────
-async function fetchMovies() {
+async function fetchMovies(search = '', genre = null) {
   // Hide noResults, show loading state
   const noResults = document.getElementById('noResults');
   noResults.classList.add('hidden');
 
   try {
     let movies = [];
-    let url = `${API}/movies/?page_size=100`;
-    while (url) {
-      const res = await fetch(url);
+    
+    // Construct the powerful query parameters that hit our Django Backend exactly as we built it!
+    let url = new URL(`${API}/movies/`);
+    url.searchParams.append('page_size', '100');
+    if (search) url.searchParams.append('search', search);
+    if (genre) url.searchParams.append('genre', genre);
+    
+    let urlStr = url.toString();
+
+    while (urlStr) {
+      const res = await fetch(urlStr);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (Array.isArray(data)) { movies = data; break; }
       movies = movies.concat(data.results || []);
-      url = data.next || null;
+      urlStr = data.next || null;
     }
-    allMovies       = movies;
-    filteredMovies  = movies;
-    buildGenreFilters();
+    
+    allMovies = movies;
+    filteredMovies = movies;
+    
+    // We only want to build the Genre buttons ONCE (on initial load without filters)
+    if (!search && !genre) {
+      buildGenreFilters();
+    }
+    
     renderMovies(movies);
     document.getElementById('movieCount').textContent = `${movies.length} movies`;
     // Explicitly hide noResults since we have movies
@@ -132,16 +154,9 @@ function buildGenreFilters() {
 }
 
 function applyFilters() {
-  filteredMovies = allMovies.filter(m => {
-    const matchGenre  = activeGenre === 'all' || (m.genre || '').toLowerCase() === activeGenre;
-    const matchSearch = !searchQuery ||
-      (m.title || '').toLowerCase().includes(searchQuery) ||
-      (m.description || '').toLowerCase().includes(searchQuery);
-    return matchGenre && matchSearch;
-  });
-  document.getElementById('movieCount').textContent = `${filteredMovies.length} movies`;
-  renderMovies(filteredMovies);
-  document.getElementById('noResults').classList.toggle('hidden', filteredMovies.length > 0);
+  // Since we are leveraging Django Backend SQL for heavy lifting now, 
+  // 'applyFilters' just triggers a fresh API call instead of looping natively in JS!
+  fetchMovies(searchQuery, activeGenre !== 'all' ? activeGenre : null);
 }
 
 function renderMovies(movies) {
@@ -375,28 +390,58 @@ async function handleOtp() {
   errEl.classList.add('hidden');
 
   try {
-    const res = await fetch(`${API}/bookings/${bookingState.bookingId}/verify-otp/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ otp: digits }),
-    });
-    if (res.status === 401) {
-      alert("Session expired. Please log in again.");
-      logout();
-      window.location.href = '/';
-      return;
+    let res;
+    if (authState.pendingEmail) {
+      // 1. Email Verification Routing (Phase 2 & 4)
+      res = await fetch(`${API}/auth/verify-email/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: authState.pendingEmail, otp: digits }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Invalid OTP';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      
+      closeModal('otpModal');
+      authState.pendingEmail = null;
+      showToast('🎉 Email verified! You can now log in.', false);
+      switchAuthTab('login');
+      openModal('authModal');
+      document.getElementById('loginEmail').value = data.email || '';
+      
+    } else if (bookingState.bookingId) {
+      // 2. Booking Verification Routing
+      res = await fetch(`${API}/bookings/${bookingState.bookingId}/verify-otp/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ otp: digits }),
+      });
+      
+      if (res.status === 401) {
+        alert("Session expired. Please log in again.");
+        logout();
+        window.location.href = '/';
+        return;
+      }
+      
+      const data = await res.json();
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Invalid OTP';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      
+      closeModal('otpModal');
+      showToast('🎉 Booking confirmed! Enjoy your movie!', false);
     }
-    const data = await res.json();
-    if (!res.ok) {
-      errEl.textContent = data.error || 'Invalid OTP';
-      errEl.classList.remove('hidden');
-      return;
-    }
-    closeModal('otpModal');
-    showToast('🎉 Booking confirmed! Enjoy your movie!', false);
+
     document.querySelectorAll('.otp-digit').forEach(i => i.value = '');
   } catch (err) {
     errEl.textContent = 'Something went wrong. Try again.';
@@ -479,9 +524,14 @@ async function handleRegister(e) {
       const msg = Object.values(data).flat().join(' ');
       throw new Error(msg || 'Registration failed');
     }
-    showToast('Account created! Please login.', false);
-    switchAuthTab('login');
-    document.getElementById('loginEmail').value = email;
+    
+    // Instead of switching to login instantly, we force them to type the OTP!
+    closeModal('authModal');
+    document.getElementById('otpEmailDisplay').textContent = email;
+    authState.pendingEmail = email; // Store state so handleOtp routes correctly!
+    openModal('otpModal');
+    showToast('OTP code sent to your email!', false);
+    
   } catch (err) {
     errEl.textContent = err.message;
     errEl.classList.remove('hidden');

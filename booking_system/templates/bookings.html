@@ -236,9 +236,12 @@
 
         let actionsHtml = '';
         if (b.status === 'CONFIRMED') {
-          actionsHtml = `<button class="btn-action btn-download" onclick="downloadPdf('${b.booking_id}')">⏬ Download PDF</button>`;
+          actionsHtml = `
+            <button class="btn-action btn-download" onclick="downloadPdf('${b.booking_id}')">⏬ Download PDF</button>
+            <button class="btn-action btn-cancel" onclick="cancelBooking('${b.booking_id}')" style="background:rgba(248,68,100,0.1);color:#f84464;border-color:rgba(248,68,100,0.3)">Cancel Ticket</button>
+          `;
         } else if (b.status === 'PENDING') {
-           actionsHtml = `<button class="btn-action btn-cancel" onclick="cancelBooking('${b.booking_id}')">Cancel</button>`;
+           actionsHtml = `<button class="btn-action btn-cancel" onclick="cancelBooking('${b.booking_id}')">Cancel Setup</button>`;
         }
 
         container.innerHTML += `
@@ -276,18 +279,26 @@
     }
 
     async function cancelBooking(id) {
-        if(!confirm("Are you sure you want to cancel this booking?")) return;
+        if(!confirm("⚠️ Are you sure you want to cancel this booking? Refunds may take 3-5 days. Note: Cancellations are blocked within 2 hours of showtime!")) return;
+        
         try {
             const res = await fetch(`${API}/bookings/${id}/cancel/`, {
                 method: 'POST',
                 headers: { "Authorization": "Bearer " + token }
             });
+            const data = await res.json();
+            
             if(res.ok) {
-                loadBookings();
+                alert("✅ Booking Successfully Cancelled");
+                loadBookings(); // Refresh the list
             } else {
-                alert("Could not cancel booking.");
+                // Here we catch the EXACT 400 Bad Request error from our Phase 2 backend logic!
+                alert("❌ Cannot Cancel: " + (data.error || "Server Error"));
             }
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            console.error(e); 
+            alert("❌ An unexpected configuration error occurred.");
+        }
     }
 
     async function downloadPdf(id) {

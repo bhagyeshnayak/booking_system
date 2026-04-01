@@ -262,6 +262,13 @@
     .loading-pulse { display: flex; flex-direction: column; gap: 16px; }
     .pulse-line { height: 20px; background: #1c1c20; border-radius: 6px; animation: shimmer 1.4s ease-in-out infinite; }
     @keyframes shimmer { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* ── Review Stars ── */
+    .star-btn { font-size: 1.8rem; color: #3a3a4a; cursor: pointer; transition: 0.2s; user-select: none; }
+    .star-btn:hover, .star-btn.active { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.5); }
+    .review-item { background: #1c1c20; padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+    .review-user { font-size: 0.85rem; font-weight: 700; color: #f0f0f0; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .review-stars { color: #fbbf24; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -421,6 +428,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderNav();
       loadMovie();
+      loadReviews();
       setupSeatMap();
       setupBookingForm();
       setupAuthModal();
@@ -551,7 +559,81 @@
               <span class="stat-value">2D • 3D</span>
             </div>
           </div>
+        </div>
+        
+        <div class="info-card">
+          <h3>User Reviews & Ratings</h3>
+          <div id="reviewsList" style="margin-top:20px;display:flex;flex-direction:column;gap:12px;">
+            <div style="color:#a0a0b0;font-size:0.9rem">Loading reviews...</div>
+          </div>
+          
+          <div style="margin-top:24px;border-top:1px solid rgba(255,255,255,0.08);padding-top:20px">
+            <h4 style="margin-bottom:12px;font-size:0.9rem;color:#f0f0f0">Leave a Review</h4>
+            <div id="authReviewGate" class="${currentUser ? 'hidden' : ''}">
+              <p style="color:#f84464;font-size:0.85rem">Please <a href="#" onclick="openAuth('login');return false;" style="color:white">login</a> to leave a rating.</p>
+            </div>
+            <div id="reviewComposer" class="${currentUser ? '' : 'hidden'}">
+              <div style="display:flex;gap:6px;margin-bottom:12px" id="starSelector">
+                 <span class="star-btn" data-val="1">★</span>
+                 <span class="star-btn" data-val="2">★</span>
+                 <span class="star-btn" data-val="3">★</span>
+                 <span class="star-btn" data-val="4">★</span>
+                 <span class="star-btn" data-val="5">★</span>
+              </div>
+              <button class="btn-back" id="submitReviewBtn" style="padding:10px 20px;font-size:0.8rem">Submit Rating</button>
+            </div>
+          </div>
         </div>`;
+        
+      // Attach Star Selector Logic
+      let selectedRating = 0;
+      const stars = document.querySelectorAll('.star-btn');
+      stars.forEach(star => {
+        star.onclick = () => {
+          selectedRating = parseInt(star.dataset.val);
+          stars.forEach(s => s.classList.toggle('active', parseInt(s.dataset.val) <= selectedRating));
+        };
+      });
+      
+      document.getElementById('submitReviewBtn').onclick = async () => {
+        if (!selectedRating) { showToast('Please select a star rating!', true); return; }
+        try {
+          const res = await fetch(`${API}/movies/${MOVIE_ID}/reviews/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+            body: JSON.stringify({ rating: selectedRating })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data[0] || data.detail || 'Failed');
+          showToast('Review submitted successfully!', false);
+          loadReviews(); // Refresh review list
+          loadMovie(); // Refresh main API to get new calculated average!
+        } catch(e) { showToast(e.message, true); }
+      };
+    }
+
+    async function loadReviews() {
+      try {
+        const res = await fetch(`${API}/movies/${MOVIE_ID}/reviews/`);
+        const reviews = await res.json();
+        const container = document.getElementById('reviewsList');
+        if (!container) return; // Might not be rendered yet
+        
+        if (reviews.length === 0) {
+          container.innerHTML = '<div style="color:#a0a0b0;font-size:0.9rem">No reviews yet. Be the first!</div>';
+          return;
+        }
+        
+        container.innerHTML = reviews.map(r => `
+          <div class="review-item">
+            <div class="review-user">
+              <span>${r.user_username || 'User'}</span>
+              <span class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+            </div>
+            <div style="font-size:0.75rem;color:#5a5a70">${new Date(r.created_at).toLocaleDateString()}</div>
+          </div>
+        `).join('');
+      } catch (e) { console.error('Reviews load failed'); }
     }
 
     function showAuthGate() {

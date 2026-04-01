@@ -222,6 +222,7 @@ JAZZMIN_SETTINGS = {
 }
 
 import sys
-if 'test' in sys.argv:
-    # Use standard RAM while running manage.py test so we don't need Redis running!
+if 'test' in sys.argv or 'runserver' in sys.argv:
+    # Use standard RAM while running local manage.py scripts so we don't crash 
+    # trying to connect to a Redis server that isn't running on your laptop!
     CACHES['default'] = {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}
