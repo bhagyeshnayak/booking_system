@@ -1,0 +1,16 @@
+# Ignore the massive virtual environment folder
+venv/
+.venv/
+
+# Ignore compiled python bytecode!
+__pycache__/
+*.pyc
+
+# Ignore secret files so they don't get accidentally baked into the shared Image!
+.env
+
+# Ignore sqlite if doing a local test
+db.sqlite3
+
+# Ignore user media uploads
+media/

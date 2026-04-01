@@ -1,16 +1,24 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = 'django-insecure-c%q(=my@33=tu$*o2%_cuo5oea5r6%553d(4uqdjwz^lldh%cr'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-insecure-key-change-me')
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['*']
+
+# Optional: set FRONTEND_URL to your production frontend (e.g. https://your-app.onrender.com)
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://127.0.0.1:8000')
 
 
 INSTALLED_APPS = [
+    'jazzmin',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -22,7 +30,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'bookings',
+    'bookings.apps.BookingsConfig',
     'users',
 ]
 
@@ -71,11 +79,11 @@ WSGI_APPLICATION = 'booking_system.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'booking_db',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': os.environ.get('DB_NAME', 'booking_db'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
     }
 }
 
@@ -84,14 +92,15 @@ DATABASES = {
 # ==============================
 
 MIDDLEWARE = [
-'django.middleware.security.SecurityMiddleware',
-'corsheaders.middleware.CorsMiddleware',
-'django.contrib.sessions.middleware.SessionMiddleware',
-'django.middleware.common.CommonMiddleware',
-'django.middleware.csrf.CsrfViewMiddleware',
-'django.contrib.auth.middleware.AuthenticationMiddleware',
-'django.contrib.messages.middleware.MessageMiddleware',
-'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 
@@ -120,6 +129,9 @@ BASE_DIR / "booking_system" / "static",
 ]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Define where collectstatic should dump all CSS and images so Whitenoise can serve them!
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 
@@ -155,4 +167,61 @@ CORS_ALLOW_ALL_ORIGINS = True
 # ==============================
 # Email Backend
 # ==============================
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# ==============================
+# Stripe Configuration
+# ==============================
+STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+
+
+# ==============================
+# Redis Caching
+# ==============================
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/1"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+
+# ==============================
+# Admin Customization (Jazzmin)
+# ==============================
+JAZZMIN_SETTINGS = {
+    "site_title": "CineBook Admin",
+    "site_header": "CineBook Dashboard",
+    "site_brand": "CineBook Management",
+    "welcome_sign": "Welcome back to CineBook HQ",
+    "copyright": "CineBook Team Ltd",
+    "search_model": ["users.User", "bookings.Booking"],
+    "show_ui_builder": False,
+    "topmenu_links": [
+        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "View Site", "url": "/", "new_window": True},
+    ],
+    "order_with_respect_to": ["bookings", "users"],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "users.User": "fas fa-user",
+        "bookings.Movie": "fas fa-film",
+        "bookings.Screening": "fas fa-clock",
+        "bookings.Booking": "fas fa-ticket-alt",
+        "bookings.Review": "fas fa-star",
+    },
+}
+
+import sys
+if 'test' in sys.argv:
+    # Use standard RAM while running manage.py test so we don't need Redis running!
+    CACHES['default'] = {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}

@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 1. The Django Application Service
+  web:
+    build: .
+    # Forward local port 8000 to the container's 8000
+    ports:
+      - "8000:8000"
+    # Read variables from our safe, gitignored .env file
+    env_file:
+      - .env
+    # Only boot UP the web container AFTER database and cache are alive!
+    depends_on:
+      - db
+      - redis
+    # Map the current root folder to /app inside the container Live!
+    # (great for auto-reloading if we ran manage.py)
+    volumes:
+      - .:/app
+    # Overwrite the command for dev vs prod (Local is faster via runserver)
+    command: >
+      bash -c "python manage.py migrate && gunicorn booking_system.wsgi:application --bind 0.0.0.0:8000"
+
+  # 2. Redis Cache Service (For making /api/movies 10x faster)
+  redis:
+    # Use the official alpine linux redis image (extremely tiny, 10MB)
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # 3. MySQL Database Container (Instead of installing on your PC!)
+  db:
+    image: mysql:8.0
+    # Provide the exact credentials Django expects
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: booking_db
+    ports:
+      - "3306:3306"
+    # Keep the SQL Database physically persistent on our laptop hard-drive so 
+    # movies don't disappear if docker crashes.
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

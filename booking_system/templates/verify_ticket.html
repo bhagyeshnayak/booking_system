@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Ticket - CineBook</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .ticket-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+        }
+        .header {
+            background: #2b2d42;
+            color: #fff;
+            padding: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .content h2 {
+            margin: 0 0 10px;
+            color: #d90429;
+            font-size: 22px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .value {
+            color: #333;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .status.confirmed { background: #d4edda; color: #155724; }
+        .status.pending { background: #fff3cd; color: #856404; }
+        .status.cancelled { background: #f8d7da; color: #721c24; }
+        .qr-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+        .qr-section img {
+            max-width: 150px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ticket-card">
+    <div class="header">
+        <h1>CineBook Verified Ticket</h1>
+    </div>
+    <div class="content">
+        <h2>{{ booking.movie.title }}</h2>
+        
+        <div class="detail-row">
+            <span class="label">Name</span>
+            <span class="value">{{ booking.name }}</span>
+        </div>
+        
+        <div class="detail-row">
+            <span class="label">Booking ID</span>
+            <span class="value" style="font-size: 12px; word-break: break-all;">{{ booking.booking_id }}</span>
+        </div>
+        
+        <div class="detail-row">
+            <span class="label">Seats</span>
+            <span class="value">{{ booking.seat_numbers }}</span>
+        </div>
+        
+        <div class="status {{ booking.status|lower }}">
+            {{ booking.status }}
+        </div>
+        
+        {% if booking.qr_code %}
+        <div class="qr-section">
+            <p style="margin: 0 0 10px; color: #777; font-size: 12px;">Official Scan</p>
+            <img src="{{ booking.qr_code.url }}" alt="QR Code">
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>

@@ -160,7 +160,7 @@ function movieCardHTML(m) {
   const genre   = m.genre ? `<span class="card-genre">${m.genre}</span>` : '';
 
   const posterEl = m.poster
-    ? `<a href="/movie/${m.id}/"><img class="card-poster" src="${escHtml(m.poster)}" alt="${escHtml(m.title)}" loading="lazy"></a>`
+    ? `<a href="/movie/${m.id}/"><img class="card-poster" src="${escHtml(m.poster)}" alt="${escHtml(m.title)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null; this.outerHTML='<div class=&quot;card-poster-placeholder&quot;>${emoji}</div>';"></a>`
     : `<a href="/movie/${m.id}/"><div class="card-poster-placeholder">${emoji}</div></a>`;
 
   return `
@@ -206,7 +206,7 @@ function openBookingModal(movieId) {
   // Poster strip
   const strip = document.getElementById('modalPosterStrip');
   if (movie.poster) {
-    strip.innerHTML = `<img src="${escHtml(movie.poster)}" alt="${escHtml(movie.title)}"><span class="strip-emoji">${getMovieEmoji(movie.genre)}</span>`;
+    strip.innerHTML = `<img src="${escHtml(movie.poster)}" alt="${escHtml(movie.title)}" referrerpolicy="no-referrer" onerror="this.style.display='none';"><span class="strip-emoji">${getMovieEmoji(movie.genre)}</span>`;
   } else {
     strip.innerHTML = `<span class="strip-emoji">${getMovieEmoji(movie.genre)}</span>`;
     strip.style.background = `linear-gradient(135deg, #1a1a2a, var(--bg-3))`;

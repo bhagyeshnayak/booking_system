@@ -1,21 +1,32 @@
 from django.contrib import admin
-from .models import Booking
-from .models import Movie
-from .models import Seat
-admin.site.register(Booking)
-admin.site.register(Movie)
-admin.site.register(Seat)
-from django.db.utils import OperationalError, ProgrammingError
+from .models import Booking, Movie, Seat, Screening
 
-try:
-    # Get the first movie or adjust this to specify which movie to create seats for
-    movie = Movie.objects.first()
-    
-    if movie and not Seat.objects.filter(movie=movie).exists():
-        rows = ["A","B","C","D"]
-        cols = range(1,9)
-        for r in rows:
-            for c in cols:
-                Seat.objects.create(movie=movie, seat_number=f"{r}{c}", is_booked=False)
-except (OperationalError, ProgrammingError):
-    pass
+
+@admin.register(Movie)
+class MovieAdmin(admin.ModelAdmin):
+    list_display = ['title', 'genre', 'rating', 'duration', 'created_at']
+    search_fields = ['title', 'genre']
+    list_filter = ['genre']
+
+
+@admin.register(Screening)
+class ScreeningAdmin(admin.ModelAdmin):
+    list_display = ['movie', 'date', 'start_time', 'hall', 'price_per_seat', 'is_active']
+    list_filter = ['hall', 'is_active', 'date']
+    search_fields = ['movie__title']
+    ordering = ['date', 'start_time']
+
+
+@admin.register(Seat)
+class SeatAdmin(admin.ModelAdmin):
+    list_display = ['seat_number', 'screening', 'movie', 'is_booked']
+    list_filter = ['is_booked']
+    search_fields = ['seat_number']
+
+
+@admin.register(Booking)
+class BookingAdmin(admin.ModelAdmin):
+    list_display = ['booking_id', 'user', 'movie', 'screening', 'seats', 'status', 'created_at']
+    list_filter = ['status']
+    search_fields = ['booking_id', 'email', 'name']
+    ordering = ['-created_at']

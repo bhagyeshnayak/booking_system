@@ -357,24 +357,6 @@
     </div>
   </div>
 
-  <!-- ── OTP Modal ── -->
-  <div class="otp-overlay hidden" id="otpOverlay">
-    <div class="otp-card">
-      <div class="otp-icon">📧</div>
-      <h2>Verify OTP</h2>
-      <p class="otp-sub">An OTP was sent to <strong id="otpEmail"></strong></p>
-      <div class="otp-inputs">
-        <input class="otp-digit" maxlength="1" type="tel" id="d1" />
-        <input class="otp-digit" maxlength="1" type="tel" id="d2" />
-        <input class="otp-digit" maxlength="1" type="tel" id="d3" />
-        <input class="otp-digit" maxlength="1" type="tel" id="d4" />
-        <input class="otp-digit" maxlength="1" type="tel" id="d5" />
-        <input class="otp-digit" maxlength="1" type="tel" id="d6" />
-      </div>
-      <div class="otp-error" id="otpError"></div>
-      <button class="btn-confirm" id="verifyBtn">Verify & Confirm</button>
-    </div>
-  </div>
 
   <!-- ── Auth Modal ── -->
   <div class="modal-overlay hidden" id="authModal">
@@ -441,7 +423,6 @@
       loadMovie();
       setupSeatMap();
       setupBookingForm();
-      setupOtp();
       setupAuthModal();
       updateSeatUI();
     });
@@ -500,7 +481,7 @@
       // Backdrop
       const backdrop = document.getElementById('heroBackdrop');
       if (m.poster) {
-        backdrop.innerHTML = `<img src="${m.poster}" alt="${m.title}"><span class="hero-backdrop-emoji">${emoji}</span>`;
+        backdrop.innerHTML = `<img src="${m.poster}" alt="${m.title}" referrerpolicy="no-referrer" onerror="this.style.display='none';"><span class="hero-backdrop-emoji">${emoji}</span>`;
       } else {
         backdrop.querySelector('.hero-backdrop-emoji').textContent = emoji;
       }
@@ -508,7 +489,7 @@
       // Poster box
       const poster = document.getElementById('heroPoster');
       if (m.poster) {
-        poster.innerHTML = `<img src="${m.poster}" alt="${m.title}">`;
+        poster.innerHTML = `<img src="${m.poster}" alt="${m.title}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.outerHTML='${emoji}';">`;
       } else {
         poster.textContent = emoji;
       }
@@ -661,10 +642,10 @@
         if (!name || !email) { showToast('Fill in all fields', true); return; }
 
         const btn = document.getElementById('confirmBtn');
-        btn.disabled = true; btn.textContent = 'Booking…';
+        btn.disabled = true; btn.textContent = 'Redirecting to Checkout…';
 
         try {
-          const res = await fetch(`${API}/bookings/`, {
+          const res = await fetch(`${API}/bookings/create-checkout-session/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
             body: JSON.stringify({ 
@@ -684,72 +665,16 @@
           const data = await res.json();
           if (!res.ok) throw new Error(JSON.stringify(data));
 
-          bookingId = data.booking_id;
-          bookEmail = email;
-          document.getElementById('otpEmail').textContent = email;
-          document.getElementById('otpOverlay').classList.remove('hidden');
+          // Redirect to Stripe Checkout
+          if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+          } else {
+            throw new Error("Checkout URL not found");
+          }
         } catch (err) {
-          showToast('Booking failed. Please try again.', true);
+          showToast('Payment initialization failed. Please try again.', true);
           console.error(err);
-        } finally {
           btn.disabled = false; btn.textContent = '🎟️ Book Now';
-        }
-      });
-    }
-
-    /* ─── OTP ─── */
-    function setupOtp() {
-      const digits = document.querySelectorAll('.otp-digit');
-      digits.forEach((inp, i) => {
-        inp.addEventListener('paste', (e) => {
-          e.preventDefault();
-          const pData = e.clipboardData.getData('text');
-          const nums = pData.match(/\d/g);
-          if (nums) {
-            let j = 0;
-            while(j < nums.length && i + j < digits.length) {
-              digits[i + j].value = nums[j];
-              j++;
-            }
-            if(i + j < digits.length) digits[i + j].focus();
-            else digits[digits.length - 1].focus();
-          }
-        });
-        inp.addEventListener('input', () => {
-          inp.value = inp.value.replace(/\D/, '');
-          if (inp.value.length > 1) inp.value = inp.value.slice(0, 1);
-          if (inp.value && i < digits.length - 1) digits[i + 1].focus();
-        });
-        inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Backspace' && !inp.value && i > 0) digits[i - 1].focus();
-        });
-      });
-
-      document.getElementById('verifyBtn').addEventListener('click', async () => {
-        const otp = [...document.querySelectorAll('.otp-digit')].map(i => i.value).join('');
-        if (otp.length < 6) { document.getElementById('otpError').textContent = 'Enter all 6 digits'; return; }
-        document.getElementById('otpError').textContent = '';
-
-        try {
-          const res = await fetch(`${API}/bookings/${bookingId}/verify-otp/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-            body: JSON.stringify({ otp }),
-          });
-          if (res.status === 401) {
-            alert("Session expired. Please log in again.");
-            localStorage.clear();
-            window.location.href = '/';
-            return;
-          }
-          const data = await res.json();
-          if (!res.ok) { document.getElementById('otpError').textContent = data.error || 'Invalid OTP'; return; }
-
-          document.getElementById('otpOverlay').classList.add('hidden');
-          showToast('🎉 Booking confirmed! Enjoy the movie!', false);
-          document.querySelectorAll('.otp-digit').forEach(d => d.value = '');
-        } catch (err) {
-          document.getElementById('otpError').textContent = 'Something went wrong.';
         }
       });
     }

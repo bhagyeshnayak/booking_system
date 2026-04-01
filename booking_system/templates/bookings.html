@@ -81,6 +81,42 @@
       box-shadow: 0 6px 24px rgba(248,68,100,0.35); transition: transform 0.2s;
     }
     .btn-home:hover { transform: translateY(-2px); }
+
+    /* ─── Success Modal Styles ─── */
+    .success-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(13,13,15,0.85); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: auto; }
+    .success-card {
+      background: #141416; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; width: 90%; max-width: 440px;
+      text-align: center; padding: 48px 36px;
+      transform: translateY(30px) scale(0.95); transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .success-overlay.show .success-card { transform: translateY(0) scale(1); }
+    
+    .success-icon-wrap {
+      width: 80px; height: 80px; margin: 0 auto 24px;
+      background: rgba(34,197,94,0.1); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(34,197,94,0.3);
+    }
+    .success-icon { font-size: 36px; }
+    
+    .success-card h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 12px; color: #f0f0f0; }
+    .success-card p { font-size: 1rem; color: #a0a0b0; line-height: 1.6; margin-bottom: 32px; }
+    .success-btn {
+      background: linear-gradient(135deg, #f84464, #ff6b35);
+      color: #fff; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.5px;
+      border: none; border-radius: 50px; padding: 16px 32px; width: 100%;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 24px rgba(248,68,100,0.3);
+    }
+    .success-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(248,68,100,0.4); }
   </style>
 </head>
 <body>
@@ -105,6 +141,18 @@
     <div style="color: #a0a0b0; text-align: center; grid-column: 1/-1;">Loading your tickets...</div>
   </div>
 
+  <!-- ── Success Modal ── -->
+  <div class="success-overlay" id="successModal">
+    <div class="success-card">
+      <div class="success-icon-wrap">
+        <span class="success-icon">🎉</span>
+      </div>
+      <h2>Booking Confirmed!</h2>
+      <p>Your payment was successful. We've automatically sent the official ticket and QR code to your email address.</p>
+      <button class="success-btn" onclick="document.getElementById('successModal').classList.remove('show')">View My Tickets</button>
+    </div>
+  </div>
+
   <script>
     const API = "http://127.0.0.1:8000/api";
     const token = localStorage.getItem("cinebook_token");
@@ -115,6 +163,13 @@
       if (!token) {
         window.location.href = '/';
         return;
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('payment') === 'success') {
+          setTimeout(() => {
+              document.getElementById('successModal').classList.add('show');
+          }, 100);
+          window.history.replaceState({}, document.title, window.location.pathname);
       }
       loadBookings();
     });
