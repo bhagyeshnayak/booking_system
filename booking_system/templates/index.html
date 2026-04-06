@@ -15,7 +15,13 @@
     body { background: #0d0d0f; color: #f0f0f0; margin: 0; font-family: 'Inter', sans-serif; }
   </style>
 </head>
-<body>
+<body class="loading">
+  
+  <!-- ── GLOBAL LOADER (COLD START) ── -->
+  <div id="globalLoader" class="global-loader">
+    <div class="modern-spinner"></div>
+    <p class="loader-text">Waking up the projectionist... 🍿</p>
+  </div>
 
   <!-- ── NAV ── -->
   <nav class="navbar" id="navbar">
@@ -41,6 +47,14 @@
       <p class="hero-subtitle">Discover, explore, and book the latest blockbusters — all in one place.</p>
       <div class="genre-filters" id="genreFilters">
         <button class="genre-chip active" data-genre="all">All</button>
+      </div>
+      <div class="genre-filters" id="ratingFilters" style="margin-top: 10px;">
+        <span style="color: #a0a0b0; font-size: 0.85rem; margin-right: 12px;">Rating:</span>
+        <button class="genre-chip active" data-rating="0">Any</button>
+        <button class="genre-chip" data-rating="7">> 7.0</button>
+        <button class="genre-chip" data-rating="8">> 8.0</button>
+         <div style="flex-grow: 1;"></div>
+        <button class="genre-chip" id="favoritesFilterBtn" style="border-color: #f84464; color: #f84464;">❤️ My Favorites</button>
       </div>
     </div>
     <div class="hero-blob"></div>
@@ -203,6 +217,7 @@
     <p>© 2026 CineBook. All rights reserved.</p>
   </footer>
 
-  <script src="{% static 'js/movies.js' %}"></script>
+  <script type="module" src="{% static 'js/index.js' %}"></script>
+  <script type="module" src="{% static 'js/auth-ui.js' %}"></script>
 </body>
 </html>
