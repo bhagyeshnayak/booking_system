@@ -35,8 +35,8 @@ class MovieListView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        # 1. Start with the full list of all movies
-        queryset = Movie.objects.all()
+        # 1. Start with the full list of all movies, ordered to prevent pagination warnings
+        queryset = Movie.objects.all().order_by('-id')
 
         # 2. Extract potential query parameters from the request URL (e.g. ?search=Bat&genre=Action)
         search_query = self.request.query_params.get('search', None)

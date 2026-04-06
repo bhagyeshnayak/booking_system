@@ -73,24 +73,9 @@ WSGI_APPLICATION = 'booking_system.wsgi.application'
 
 
 DATABASES = {
-    'default': dj_database_url.parse("postgresql://movie_db_duv7_user:G52OspT4EOV0pykD8KxLusV1I7p4l5wi@dpg-d79ppq0gjchc73fp6j6g-a.virginia-postgres.render.com/movie_db_duv7")
+    'default': dj_database_url.parse(os.environ.get("DATABASE_URL", "sqlite:///db.sqlite3"))
 }
-# DATABASES = {
-# 'default': {
-#     'ENGINE': 'django.db.backends.sqlite3',
-#     'NAME': BASE_DIR / 'db.sqlite3',
-# }
-# }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.environ.get('DB_NAME', 'booking_db'),
-#         'USER': os.environ.get('DB_USER', 'root'),
-#         'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-#         'HOST': os.environ.get('DB_HOST', 'localhost'),
-#         'PORT': os.environ.get('DB_PORT', '3306'),
-#     }
-# }
+
 
 # ==============================
 # Middleware
@@ -189,15 +174,7 @@ STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 # ==============================
 # Redis Caching
 # ==============================
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/1"),
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
+
 
 CACHES = {
     "default": {

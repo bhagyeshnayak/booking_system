@@ -63,18 +63,24 @@ movies_data = [
 
 added_count = 0
 for data in movies_data:
-    if not Movie.objects.filter(title=data['title']).exists():
-        movie = Movie.objects.create(**data)
+    movie, created = Movie.objects.get_or_create(
+        title=data['title'],
+        defaults=data
+    )
+    if created:
         added_count += 1
         print(f"Added movie: {movie.title}")
         
-        # generate seats for the movie (100 seats, A1-A10, etc. just to populate)
+        # generate seats for the movie (100 seats, A1-A10, etc.)
+        new_seats = []
         for row in ['A', 'B', 'C', 'D', 'E', 'F', 'G']:
             for num in range(1, 11):
-                Seat.objects.create(
+                new_seats.append(Seat(
                     movie=movie,
                     seat_number=f"{row}{num}",
                     is_booked=random.choice([True, False, False, False])
-                )
+                ))
+        Seat.objects.bulk_create(new_seats)
 
 print(f"Total new movies added: {added_count}")
+print("Movies seeded successfully")
