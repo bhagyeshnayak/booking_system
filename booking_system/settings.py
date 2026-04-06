@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
 
 load_dotenv()
 
@@ -70,12 +71,16 @@ WSGI_APPLICATION = 'booking_system.wsgi.application'
 # Database
 # ==============================
 
+
 DATABASES = {
-'default': {
-    'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': BASE_DIR / 'db.sqlite3',
+    'default': dj_database_url.parse("postgresql://movie_db_duv7_user:G52OspT4EOV0pykD8KxLusV1I7p4l5wi@dpg-d79ppq0gjchc73fp6j6g-a.virginia-postgres.render.com/movie_db_duv7")
 }
-}
+# DATABASES = {
+# 'default': {
+#     'ENGINE': 'django.db.backends.sqlite3',
+#     'NAME': BASE_DIR / 'db.sqlite3',
+# }
+# }
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
