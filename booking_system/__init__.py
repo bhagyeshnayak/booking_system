@@ -1,2 +1,1 @@
-import pymysql
-pymysql.install_as_MySQLdb()
+# Replaced pymysql for postgres migration
