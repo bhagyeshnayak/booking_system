@@ -6,7 +6,7 @@
  * Added Phase 6 Caching (stale-while-revalidate).
  */
 
-const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
+export const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
   ? '/api' 
   : 'https://booking-system-i2io.onrender.com/api';
 

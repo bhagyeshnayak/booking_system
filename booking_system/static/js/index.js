@@ -5,7 +5,7 @@
  * Added Phase 6: Caching, Advanced Filters, and Favorites (Wishlist).
  */
 
-import { fetchAPI } from './api.js';
+import { fetchAPI, API_BASE_URL } from './api.js';
 import * as Auth from './auth.js';
 import * as UI from './ui.js';
 
