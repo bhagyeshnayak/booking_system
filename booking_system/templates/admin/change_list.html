@@ -4,12 +4,17 @@
 {% block object-tools %}
     {% comment %}
         FIX: AttributeError: 'super' object has no attribute 'dicts'
-        This override avoids the problematic call that triggers the Jazzmin bug 
-        in newer Django versions while preserving the Jazzmin layout.
+        We manually implement the object tools (Add button) to avoid the broken 
+        Jazzmin {% change_list_object_tools %} tag in newer Django/Python environments.
     {% endcomment %}
     <div class="col-12 col-md-auto d-flex align-items-center justify-content-end page-actions">
         {% block object-tools-items %}
-            {% change_list_object_tools %}
+            {% if has_add_permission %}
+                {% url cl.opts|admin_urlname:'add' as add_url %}
+                <a href="{% add_preserved_filters add_url is_popup add_url %}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> {% blocktrans with name=cl.opts.verbose_name %}Add {{ name }}{% endblocktrans %}
+                </a>
+            {% endif %}
         {% endblock %}
     </div>
 {% endblock %}
