@@ -279,33 +279,38 @@ async function loadMore() {
  */
 async function resetAndFetch() {
   currentPage = 1;
-  const url = new URL(`${API_BASE_URL}/movies/`, window.location.origin);
-  url.searchParams.append('page', 1);
-  url.searchParams.append('page_size', 50); // Get more so local favorites filter works better
-  
+
+  // Build query params as a simple string - avoids new URL() constructor issues
+  const params = new URLSearchParams();
+  params.append('page', 1);
+  params.append('page_size', 50);
+
   if (!showFavoritesOnly) {
-    if (activeGenre !== 'all') url.searchParams.append('genre', activeGenre);
-    if (activeRating !== '0') url.searchParams.append('min_rating', activeRating);
-    if (searchQuery) url.searchParams.append('search', searchQuery);
+    if (activeGenre !== 'all') params.append('genre', activeGenre);
+    if (activeRating !== '0') params.append('min_rating', activeRating);
+    if (searchQuery) params.append('search', searchQuery);
   }
 
+  const endpoint = `/movies/?${params.toString()}`;
+
   try {
-    const data = await fetchAPI(url.toString(), {
+    const data = await fetchAPI(endpoint, {
       useCache: true,
       onCacheUpdate: (updatedData) => {
-        movies = updatedData.results;
+        movies = updatedData.results || [];
         nextUrl = updatedData.next;
         renderMovies(movies, false);
       }
     });
-    
-    movies = data.results;
+
+    movies = data.results || [];
     nextUrl = data.next;
     renderMovies(movies, false);
     renderPagination();
   } catch (err) {
-    console.warn("Backend unavailable, falling back to local memory filtering!");
-    let cachedSource = JSON.parse(localStorage.getItem(`cinebook_cache_${API_BASE_URL}/movies/?page=1&page_size=50`) || '{"results":[]}');
+    console.warn('Backend unavailable, falling back to local memory filtering!', err.message);
+    const cacheKey = `cinebook_cache_${API_BASE_URL}/movies/?page=1&page_size=50`;
+    let cachedSource = JSON.parse(localStorage.getItem(cacheKey) || '{"results":[]}');
     let localList = cachedSource.results || cachedSource;
 
     if (!showFavoritesOnly) {
@@ -319,11 +324,11 @@ async function resetAndFetch() {
         localList = localList.filter(m => (m.title || '').toLowerCase().includes(searchQuery));
       }
     }
-    
+
     renderMovies(localList, false);
     const pw = document.getElementById('paginationWrapper');
-    if(pw) pw.innerHTML = '';
-    UI.showToast('Backend filtering unavailable. Using local memory cache. ⚡', 'info');
+    if (pw) pw.innerHTML = '';
+    UI.showToast('Filtering from local cache ⚡', 'info');
   }
 }
 
