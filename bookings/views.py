@@ -53,7 +53,7 @@ class MovieListView(generics.ListAPIView):
 
         # 4. Apply 'genre' filter if provided (exact match ignoring case)
         if genre_query:
-            queryset = queryset.filter(genre__iexact=genre_query)
+            queryset = queryset.filter(genre__icontains=genre_query)
 
         # 5. Apply 'min_rating' filter if provided (must be >= the number)
         if min_rating:
