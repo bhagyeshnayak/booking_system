@@ -279,7 +279,7 @@ async function loadMore() {
  */
 async function resetAndFetch() {
   currentPage = 1;
-  const url = new URL(`${API_BASE_URL}/movies/`);
+  const url = new URL(`${API_BASE_URL}/movies/`, window.location.origin);
   url.searchParams.append('page', 1);
   url.searchParams.append('page_size', 50); // Get more so local favorites filter works better
   
@@ -310,7 +310,7 @@ async function resetAndFetch() {
 
     if (!showFavoritesOnly) {
       if (activeGenre !== 'all') {
-        localList = localList.filter(m => (m.genre || '').toLowerCase() === activeGenre);
+        localList = localList.filter(m => (m.genre || '').toLowerCase().includes(activeGenre));
       }
       if (activeRating !== '0') {
         localList = localList.filter(m => parseFloat(m.rating || 0) >= parseFloat(activeRating));
