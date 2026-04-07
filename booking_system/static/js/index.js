@@ -5,7 +5,10 @@
  * Added Phase 6: Caching, Advanced Filters, and Favorites (Wishlist).
  */
 
-import { fetchAPI, API_BASE_URL } from './api.js';
+import { fetchAPI } from './api.js';
+
+// Derive the API base URL dynamically — no hardcoding, works on localhost AND Render
+const API_BASE = window.location.origin + '/api';
 import * as Auth from './auth.js';
 import * as UI from './ui.js';
 
@@ -309,7 +312,7 @@ async function resetAndFetch() {
     renderPagination();
   } catch (err) {
     console.warn('Backend unavailable, falling back to local memory filtering!', err.message);
-    const cacheKey = `cinebook_cache_${API_BASE_URL}/movies/?page=1&page_size=50`;
+    const cacheKey = `cinebook_cache_${API_BASE}/movies/?page=1&page_size=50`;
     let cachedSource = JSON.parse(localStorage.getItem(cacheKey) || '{"results":[]}');
     let localList = cachedSource.results || cachedSource;
 
