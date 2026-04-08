@@ -14,6 +14,7 @@ from rest_framework.generics import ListAPIView
 from django.contrib.auth import get_user_model
 from bookings.models import Booking
 from bookings.serializers import BookingSerializer
+from .serializers import RegisterSerializer
 
 # Get the custom User model defined in users/models.py
 User = get_user_model()
@@ -27,69 +28,47 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # 1. Read 'username', 'email' and 'password' from the incoming JSON request.
-        username = request.data.get("username", "").strip()
-        email    = request.data.get("email", "").strip()
-        password = request.data.get("password", "")
-
-        # 2. Check if all required fields were provided.
-        if not username or not email or not password:
-            return Response(
-                {"error": "Username, email and password are required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 3. Check if an account already exists with that email.
-        if User.objects.filter(email=email).exists():
-            return Response(
-                {"email": ["A user with this email already exists."]},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 4. Check if an account already exists with that username.
-        if User.objects.filter(username=username).exists():
-            return Response(
-                {"username": ["A user with this username already exists."]},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 5. Automatically generate a 6-digit OTP using the secrets library (secure random).
-        otp = str(secrets.randbelow(900000) + 100000)
-
-        # 6. Create the actual user inside the database securely using create_user.
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
+        # 1. Provide the data to our new RegisterSerializer
+        serializer = RegisterSerializer(data=request.data)
         
-        # 7. Add the OTP details before saving. They are NOT verified yet.
-        user.email_otp = otp
-        user.email_otp_created_at = timezone.now()
-        user.is_email_verified = False  # Need verification to login!
-        user.save()
+        # 2. Let the serializer do the hard work of validating email/username uniqueness!
+        if serializer.is_valid():
+            # 3. Save the user (this calls create_user safely inside the serializer)
+            user = serializer.save()
+            
+            # 4. Automatically generate a 6-digit OTP using the secrets library (secure random).
+            otp = str(secrets.randbelow(900000) + 100000)
+            
+            # 5. Add the OTP details before saving. They are NOT verified yet.
+            user.email_otp = otp
+            user.email_otp_created_at = timezone.now()
+            user.is_email_verified = False  # Need verification to login!
+            user.save()
 
-        # 8. Send the OTP via Email to the user immediately.
-        try:
-            send_mail(
-                subject='Welcome to CineBook - Verify Your Email',
-                message=f'Hello {username},\n\nYour OTP for email verification is: {otp}\n\nThis OTP is valid for 10 minutes.',
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[email],
-                fail_silently=False,
+            # 6. Send the OTP via Email to the user immediately.
+            try:
+                send_mail(
+                    subject='Welcome to CineBook - Verify Your Email',
+                    message=f'Hello {user.username},\n\nYour OTP for email verification is: {otp}\n\nThis OTP is valid for 10 minutes.',
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                # If email fails, we log it but don't crash the server.
+                print(f"Error sending OTP email: {e}")
+
+            # 7. Return success signal telling them to check their inbox. 
+            return Response(
+                {
+                    "message": "Account created! Please check your email for the OTP to verify.",
+                    "email": user.email
+                },
+                status=status.HTTP_201_CREATED
             )
-        except Exception as e:
-            # If email fails, we log it but don't crash the server.
-            print(f"Error sending OTP email: {e}")
-
-        # 9. Return success signal telling them to check their inbox. 
-        return Response(
-            {
-                "message": "Account created! Please check your email for the OTP to verify.",
-                "email": user.email
-            },
-            status=status.HTTP_201_CREATED
-        )
+            
+        # If there are any validation errors (like email exists), it automatically builds the error map
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # ==========================================

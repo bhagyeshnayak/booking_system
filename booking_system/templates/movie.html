@@ -440,13 +440,29 @@
       const password = document.getElementById('regPassword').value;
       const err = document.getElementById('registerError');
       err.classList.add('hidden');
+      
+      console.log("DATA SENT:", { username, email, password });
+      
       try {
         const res  = await fetch(`${API}/auth/register/`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, email, password }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(Object.values(data).flat().join(' '));
+        
+        const text = await res.text();
+        console.log("RAW RESPONSE:", text);
+        
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            throw new Error("Server returned non-JSON response");
+        }
+        
+        if (!res.ok) {
+            throw new Error(data.detail || data.error || JSON.stringify(data));
+        }
+        
         showToast('Account created! Please login.', false);
         switchTab('login');
         document.getElementById('loginEmail').value = email;
