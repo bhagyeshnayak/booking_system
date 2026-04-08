@@ -55,8 +55,13 @@ class RegisterView(APIView):
                     fail_silently=False,
                 )
             except Exception as e:
-                # If email fails, we log it but don't crash the server.
+                # If email fails, delete the zombie user and return a JSON error
                 print(f"Error sending OTP email: {e}")
+                user.delete()
+                return Response(
+                    {"error": "Failed to send verification email. Please try again later or check your email provider."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
             # 7. Return success signal telling them to check their inbox. 
             return Response(
