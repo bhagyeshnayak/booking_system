@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 from django.urls import re_path
 from django.views.static import serve
 
-from bookings.views import home, movie_detail_page, verify_ticket_view
+from bookings.views import home, movie_detail_page, verify_ticket_view, tmdb_movie_detail_page
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -20,10 +20,14 @@ urlpatterns = [
     # Frontend pages
     path('', home, name="home"),
     path('movie/<int:movie_id>/', movie_detail_page, name="movie_detail"),
+    path('movie/tmdb/<int:tmdb_id>/', tmdb_movie_detail_page, name="tmdb_movie_detail"),
     path('verify-ticket/<uuid:booking_id>/', verify_ticket_view, name="verify-ticket"),
 
     # Booking APIs
     path('api/', include('bookings.urls')),
+
+    # TMDB proxy API (server-side, keeps API key secret)
+    path('api/tmdb/', include('tmdb.urls')),
 
     # User authentication
     path('api/auth/', include('users.urls')),

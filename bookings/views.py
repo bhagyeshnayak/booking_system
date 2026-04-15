@@ -376,6 +376,10 @@ def home(request):
 def movie_detail_page(request, movie_id):
     return render(request, "movie.html", {"movie_id": movie_id})
 
+def tmdb_movie_detail_page(request, tmdb_id):
+    """Renders the TMDB movie detail page. Data is fetched client-side via /api/tmdb/detail/."""
+    return render(request, "tmdb_movie.html", {"tmdb_id": tmdb_id})
+
 def verify_ticket_view(request, booking_id):
     try:
         booking = Booking.objects.get(booking_id=booking_id)

@@ -12,7 +12,7 @@ class Movie(models.Model):
 
     description = models.TextField(blank=True)
 
-    poster = models.URLField(default="")
+    poster = models.URLField(default="", max_length=500)
 
     duration = models.IntegerField(default=120)  # minutes
 
@@ -21,6 +21,20 @@ class Movie(models.Model):
     rating = models.DecimalField(max_digits=3, decimal_places=1, default=0.0)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # ── TMDB Integration Fields ─────────────────────────────────────────────
+    # Stores the TMDB movie ID so we can get-or-create a local Movie
+    # record when a user books a movie fetched from TMDB.
+    tmdb_id = models.IntegerField(
+        null=True, blank=True, unique=True,
+        help_text="TMDB movie ID (null for locally-added movies)"
+    )
+
+    # Release date synced from TMDB
+    release_date = models.DateField(
+        null=True, blank=True,
+        help_text="Release date from TMDB or manually set"
+    )
 
     def __str__(self):
         return self.title

@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'bookings.apps.BookingsConfig',
     'users',
+    'tmdb',                        # TMDB API integration
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -172,6 +173,15 @@ DEFAULT_FROM_EMAIL = 'nayakbhagyesh220@outlook.com' # Must match your SendGrid v
 # ==============================
 STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+
+
+# ==============================
+# TMDB API Configuration
+# ==============================
+# Keys are loaded from .env — never hardcoded here.
+# Use TMDBService() from tmdb/services.py to make all TMDB requests.
+TMDB_API_KEY   = os.environ.get('TMDB_API_KEY', '')
+TMDB_READ_TOKEN = os.environ.get('TMDB_READ_TOKEN', '')
 
 
 # ==============================

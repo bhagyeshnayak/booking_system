@@ -1,0 +1,443 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="pageTitle">Movie — CineBook</title>
+  <meta name="description" content="Movie details, trailers, and ticket booking on CineBook." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2" />
+
+  <style>
+    /* ── Reset & Base ── */
+    .hidden { display: none !important; }
+    body { background: #0d0d0f; color: #f0f0f0; margin: 0; font-family: 'Inter', sans-serif; }
+
+    /* ── TMDB Badge ─────────────────────────────────────────────────── */
+    .tmdb-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: linear-gradient(135deg, #032541, #01b4e4);
+      color: #fff; padding: 4px 12px; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Hero Banner ─────────────────────────────────────────────────── */
+    .detail-hero {
+      position: relative;
+      min-height: 520px;
+      overflow: hidden;
+      margin-top: 70px;
+    }
+    .hero-backdrop {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #1a0a12, #0a0a1a, #1a1a0a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8rem;
+    }
+    .hero-backdrop img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(0.3) blur(3px);
+      position: absolute; inset: 0;
+    }
+    .hero-backdrop-emoji { position: relative; z-index: 1; opacity: 0.15; }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(to right, rgba(13,13,15,0.97) 35%, rgba(13,13,15,0.3) 80%),
+        linear-gradient(to top, rgba(13,13,15,1) 0%, transparent 50%);
+    }
+    .hero-content {
+      position: absolute; bottom: 40px; left: 0; right: 0;
+      max-width: 1400px; margin: 0 auto; padding: 0 40px;
+      display: flex; align-items: flex-end; gap: 36px;
+      z-index: 2;
+    }
+
+    /* ── Poster ─────────────────────────────────────────────────────── */
+    .hero-poster {
+      width: 180px; height: 270px; flex-shrink: 0;
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.8);
+      border: 2px solid rgba(255,255,255,0.1);
+      background: #1c1c20;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 5rem;
+    }
+    .hero-poster img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── Hero Info ───────────────────────────────────────────────────── */
+    .hero-info { flex: 1; padding-bottom: 8px; }
+    .hero-genre-badge {
+      display: inline-block;
+      background: rgba(248,68,100,0.2); color: #f84464;
+      border: 1px solid rgba(248,68,100,0.4);
+      padding: 4px 14px; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.5px;
+      margin-bottom: 12px; text-transform: uppercase;
+    }
+    .hero-title {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.1; margin-bottom: 8px;
+    }
+    .hero-tagline {
+      font-size: 1rem; color: #a0a0b0; font-style: italic;
+      margin-bottom: 12px; display: none;
+    }
+    .hero-meta {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+      font-size: 0.875rem; color: #a0a0b0; margin-bottom: 18px;
+    }
+    .hero-meta .sep { color: #3a3a4a; }
+    .hero-meta .star { color: #fbbf24; }
+    .hero-meta .rating-val { font-weight: 700; color: #f0f0f0; }
+    .hero-desc {
+      font-size: 0.95rem; color: #b0b0c0; line-height: 1.75;
+      max-width: 600px;
+    }
+    .hero-actions {
+      display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap;
+    }
+
+    /* ── Action Buttons ──────────────────────────────────────────────── */
+    .btn-book-hero {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #f84464, #ff6b35);
+      color: #fff; font-weight: 700; font-size: 1rem;
+      padding: 14px 32px; border-radius: 50px;
+      border: none; cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.3px;
+      box-shadow: 0 6px 24px rgba(248,68,100,0.4);
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-book-hero:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(248,68,100,0.55); }
+    .btn-book-hero:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+    .btn-trailer-hero {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #f0f0f0; font-weight: 600; font-size: 0.95rem;
+      padding: 13px 28px; border-radius: 50px;
+      cursor: pointer; transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-trailer-hero:hover {
+      background: rgba(255,30,30,0.15);
+      border-color: rgba(255,30,30,0.4);
+      color: #fff;
+    }
+
+    .btn-back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #a0a0b0; font-size: 0.85rem; font-weight: 600;
+      text-decoration: none; transition: color 0.2s;
+    }
+    .btn-back-link:hover { color: #f0f0f0; }
+
+    /* ── Detail Body ─────────────────────────────────────────────────── */
+    .detail-body {
+      max-width: 1400px; margin: 0 auto;
+      padding: 48px 40px 100px;
+      display: grid; grid-template-columns: 1fr 360px; gap: 48px;
+    }
+    @media (max-width: 900px) {
+      .detail-body { grid-template-columns: 1fr; padding: 28px 20px 80px; }
+      .hero-content { padding: 0 20px; flex-direction: column; align-items: flex-start; gap: 20px; }
+      .hero-poster { width: 120px; height: 180px; }
+    }
+
+    /* ── Info Cards ──────────────────────────────────────────────────── */
+    .detail-info { display: flex; flex-direction: column; gap: 28px; }
+    .info-card {
+      background: #141416; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; padding: 28px;
+    }
+    .info-card h3 {
+      font-size: 0.75rem; font-weight: 700; color: #5a5a70;
+      text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;
+    }
+
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    @media (max-width: 500px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat { display: flex; flex-direction: column; gap: 6px; }
+    .stat-label { font-size: 0.75rem; color: #5a5a70; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    .stat-value { font-size: 1rem; font-weight: 700; color: #f0f0f0; }
+    .stat-value.accent { color: #f84464; }
+    .stat-value.gold { color: #fbbf24; font-size: 0.9rem; }
+
+    /* ── Booking Sidebar ─────────────────────────────────────────────── */
+    .sidebar-booking {
+      background: #141416; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px; padding: 28px;
+      height: fit-content; position: sticky; top: 90px;
+    }
+    .sidebar-booking h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+    .sidebar-booking .sub { font-size: 0.85rem; color: #a0a0b0; margin-bottom: 24px; }
+
+    .price-info {
+      background: rgba(248,68,100,0.07);
+      border: 1px solid rgba(248,68,100,0.2);
+      border-radius: 12px; padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .price-info p { font-size: 0.83rem; color: #a0a0b0; margin: 0 0 6px; }
+    .price-info .price-val {
+      font-size: 1.6rem; font-weight: 800; color: #f84464;
+    }
+
+    .sidebar-btn-group { display: flex; flex-direction: column; gap: 12px; }
+    .btn-confirm {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #f84464, #ff6b35);
+      color: #fff; font-weight: 700; font-size: 1rem;
+      border: none; border-radius: 50px; cursor: pointer;
+      transition: all 0.2s; font-family: 'Inter', sans-serif;
+      box-shadow: 0 6px 24px rgba(248,68,100,0.3);
+    }
+    .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(248,68,100,0.5); }
+    .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .btn-trailer-sidebar {
+      width: 100%; padding: 13px;
+      background: transparent; color: #f0f0f0;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 50px; font-weight: 600; font-size: 0.9rem;
+      cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .btn-trailer-sidebar:hover {
+      background: rgba(255,30,30,0.12);
+      border-color: rgba(255,30,30,0.35);
+    }
+
+    .auth-notice {
+      background: rgba(248,68,100,0.07);
+      border: 1px solid rgba(248,68,100,0.2);
+      border-radius: 12px; padding: 14px 18px;
+      font-size: 0.85rem; color: #a0a0b0; line-height: 1.5;
+      margin-bottom: 16px; display: none;
+    }
+    .auth-notice a { color: #f84464; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .auth-notice.show { display: block; }
+
+    /* ── Skeleton loading ────────────────────────────────────────────── */
+    .loading-pulse { display: flex; flex-direction: column; gap: 12px; }
+    .pulse-line { background: #1c1c20; border-radius: 6px; animation: shimmer 1.4s ease-in-out infinite; }
+    @keyframes shimmer { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+    /* ── Toast ───────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 32px; right: 32px; z-index: 999;
+      display: flex; align-items: center; gap: 12px;
+      background: #252529; border: 1px solid rgba(34,197,94,0.3);
+      color: #f0f0f0; padding: 14px 22px;
+      border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      font-weight: 500; font-size: 0.9rem;
+      animation: slideInRight 0.4s cubic-bezier(0.34,1.2,0.64,1);
+    }
+    .toast.error { border-color: rgba(248,68,100,0.4); }
+    @keyframes slideInRight { from { transform: translateX(120%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAV ── -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <span class="logo-icon">🎬</span>
+        <span class="logo-text">CineBook</span>
+      </a>
+      <div class="nav-search" style="display:none"></div>
+      <div class="nav-actions" id="navActions"></div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="detail-hero" id="heroSection">
+    <div class="hero-backdrop" id="heroBackdrop">
+      <span class="hero-backdrop-emoji">🎬</span>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <!-- Poster -->
+      <div class="hero-poster" id="heroPoster">🎬</div>
+
+      <!-- Info -->
+      <div class="hero-info">
+        <!-- TMDB Badge + Genre -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <span class="tmdb-badge">🎭 TMDB</span>
+          <span class="hero-genre-badge" id="heroGenre">Loading...</span>
+        </div>
+
+        <div class="loading-pulse" id="heroLoadingPulse">
+          <div class="pulse-line" style="width:60%;height:42px;border-radius:8px;"></div>
+          <div class="pulse-line" style="width:45%;height:18px;"></div>
+          <div class="pulse-line" style="width:80%;height:56px;"></div>
+        </div>
+
+        <h1 class="hero-title hidden" id="heroTitle"></h1>
+        <p class="hero-tagline" id="heroTagline"></p>
+
+        <div class="hero-meta hidden" id="heroMeta">
+          <span id="heroRating"><span class="star">★</span> —</span>
+          <span class="sep">•</span>
+          <span id="heroRuntime">— min</span>
+          <span class="sep">•</span>
+          <span id="heroReleaseDate">—</span>
+        </div>
+
+        <p class="hero-desc hidden" id="heroDesc"></p>
+
+        <div class="hero-actions hidden" id="heroActions">
+          <button class="btn-book-hero trigger-book-now" id="heroBookBtn">
+            🎟️ Book Now
+          </button>
+          <button class="btn-trailer-hero trigger-trailer hidden" id="trailerBtn">
+            ▶ Watch Trailer
+          </button>
+          <a href="/" class="btn-back-link">← All Movies</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BODY ── -->
+  <div class="detail-body">
+
+    <!-- Left: Info -->
+    <div class="detail-info">
+      <div class="info-card">
+        <h3>Movie Details</h3>
+        <div class="stats-grid" id="statsGrid">
+          <!-- Rendered by JS -->
+          <div class="loading-pulse" style="grid-column:1/-1">
+            <div class="pulse-line" style="height:16px;width:100%"></div>
+            <div class="pulse-line" style="height:16px;width:75%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>About This Movie</h3>
+        <p id="aboutText" style="color:#a0a0b0;line-height:1.75;font-size:0.95rem;">
+          Loading overview...
+        </p>
+      </div>
+    </div>
+
+    <!-- Right: Booking Sidebar -->
+    <div class="sidebar-booking">
+      <h3>Book Tickets</h3>
+      <p class="sub">Powered by CineBook · Secure Stripe Checkout</p>
+
+      <div class="auth-notice" id="authNotice">
+        Please <a id="loginLink">login</a> or <a id="registerLink">register</a> to book tickets.
+      </div>
+
+      <div class="price-info">
+        <p>Price per seat (incl. taxes)</p>
+        <div class="price-val">₹ 250</div>
+      </div>
+
+      <div class="sidebar-btn-group">
+        <button class="btn-confirm trigger-book-now" id="sidebarBookBtn">
+          🎟️ Book Now — Secure Checkout
+        </button>
+        <button class="btn-trailer-sidebar trigger-trailer" id="sidebarTrailerBtn">
+          ▶ Watch Trailer
+        </button>
+      </div>
+
+      <p style="font-size:0.75rem;color:#3a3a4a;margin-top:16px;line-height:1.5;text-align:center;">
+        🔒 Payments secured by Stripe.<br>
+        Data sourced from The Movie Database (TMDB).<br>
+        No illegal streaming — trailers only.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Auth Modal (reused from existing codebase) ── -->
+  <div class="modal-overlay hidden" id="authModal">
+    <div class="modal modal--auth">
+      <button class="modal-close" id="closeAuth">✕</button>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabLogin" data-tab="login">Login</button>
+        <button class="auth-tab" id="tabRegister" data-tab="register">Register</button>
+      </div>
+      <form class="auth-form" id="loginForm">
+        <h2 class="auth-title">Welcome Back</h2>
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required />
+        </div>
+        <p class="auth-error hidden" id="loginError"></p>
+        <button type="submit" class="btn-book">Sign In</button>
+      </form>
+      <form class="auth-form hidden" id="registerForm">
+        <h2 class="auth-title">Create Account</h2>
+        <div class="form-group">
+          <label for="regUsername">Username</label>
+          <input type="text" id="regUsername" placeholder="johndoe" required />
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Email</label>
+          <input type="email" id="regEmail" placeholder="you@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <input type="password" id="regPassword" placeholder="••••••••" required />
+        </div>
+        <p class="auth-error hidden" id="registerError"></p>
+        <button type="submit" class="btn-book">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div class="toast hidden" id="toast">
+    <span class="toast-icon">✅</span>
+    <span id="toastMsg">Done!</span>
+  </div>
+
+  <!-- Pass TMDB_ID from Django to JS -->
+  <script>
+    window.TMDB_ID = "{{ tmdb_id }}";
+
+    // Reveal hero elements after tmdb-detail.js populates them
+    // Uses a MutationObserver to watch heroTitle for content changes
+    const _revealTimer = setInterval(() => {
+      const title   = document.getElementById('heroTitle');
+      const pulse   = document.getElementById('heroLoadingPulse');
+      const meta    = document.getElementById('heroMeta');
+      const desc    = document.getElementById('heroDesc');
+      const actions = document.getElementById('heroActions');
+      if (title && title.textContent.trim()) {
+        clearInterval(_revealTimer);
+        if (pulse)   pulse.style.display  = 'none';
+        if (title)   title.classList.remove('hidden');
+        if (meta)    meta.classList.remove('hidden');
+        if (desc)    desc.classList.remove('hidden');
+        if (actions) actions.classList.remove('hidden');
+        // Also update about section
+        const about = document.getElementById('aboutText');
+        if (about && desc) about.textContent = desc.textContent;
+      }
+    }, 300);
+  </script>
+
+  <script type="module" src="{% static 'js/tmdb-detail.js' %}?v=1"></script>
+  <script type="module" src="{% static 'js/auth-ui.js' %}?v=4"></script>
+
+</body>
+</html>

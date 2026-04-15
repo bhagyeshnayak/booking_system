@@ -1,5 +1,23 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 db.sqlite3
 media/
+staticfiles/
+
+# 🔒 SECRETS — NEVER commit these
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Node (if used for frontend build tools)
+node_modules/

@@ -58,12 +58,26 @@
       </div>
     </div>
     <div class="hero-blob"></div>
+    <!-- Source toggle: TMDB live data vs local DB -->
+    <div id="sourceToggleWrap" style="position:absolute;bottom:14px;right:40px;z-index:5;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:0.78rem;color:#5a5a70;font-weight:600;">Source:</span>
+        <button class="genre-chip active" id="srcTMDB" data-src="tmdb"
+          title="Live movies from TMDB (The Movie Database)">
+          🎭 TMDB Live
+        </button>
+        <button class="genre-chip" id="srcLocal" data-src="local"
+          title="Movies from your local database">
+          🗄️ Local
+        </button>
+      </div>
+    </div>
   </section>
 
   <!-- ── MOVIES SECTION ── -->
   <main class="movies-section">
     <div class="section-header">
-      <h2 class="section-title">Now Showing</h2>
+      <h2 class="section-title" id="sectionTitle">🎭 Popular on TMDB</h2>
       <span class="movie-count" id="movieCount"></span>
     </div>
     <div class="movies-grid" id="moviesContainer">
@@ -217,7 +231,8 @@
     <p>© 2026 CineBook. All rights reserved.</p>
   </footer>
 
-  <script type="module" src="{% static 'js/index.js' %}?v=4"></script>
+  <script type="module" src="{% static 'js/tmdb.js' %}?v=1"></script>
+  <script type="module" src="{% static 'js/index.js' %}?v=5"></script>
   <script type="module" src="{% static 'js/auth-ui.js' %}?v=4"></script>
 </body>
 </html>
