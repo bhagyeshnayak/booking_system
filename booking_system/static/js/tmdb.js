@@ -121,12 +121,23 @@ function ensureTrailerModal() {
           frameborder="0"
           allow="autoplay; encrypted-media; picture-in-picture"
           allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"
           title="Movie Trailer"
           src="">
         </iframe>
+        <div id="trailerError" class="trailer-error hidden">
+          <div>
+            <h3 style="margin-top:0;">Trailer Not Available</h3>
+            <p style="color:#a0a0b0; font-size: 0.9rem;">We couldn't find an official YouTube trailer for this movie.</p>
+          </div>
+        </div>
       </div>
       <p class="trailer-yt-note">
-        🎬 Official trailer via YouTube · TMDB · No illegal streaming
+        🎬 Official trailer via YouTube · TMDB · No illegal streaming &nbsp;|&nbsp;
+        <a id="trailerYtLink" href="#" target="_blank" rel="noopener noreferrer"
+           style="color:#f84464;text-decoration:none;font-weight:600;">
+          ▶ Open on YouTube
+        </a>
       </p>
     </div>
   `;
@@ -193,12 +204,19 @@ function ensureTrailerModal() {
 
       .trailer-iframe-wrapper {
         position: relative; padding-bottom: 56.25%; /* 16:9 */
-        height: 0; overflow: hidden;
+        height: 0; overflow: hidden; background: #000;
       }
       .trailer-iframe-wrapper iframe {
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
       }
+      .trailer-error {
+        position: absolute; inset: 0; 
+        display: flex; align-items: center; justify-content: center;
+        text-align: center; color: #fff;
+        background: #141416;
+      }
+      .trailer-error.hidden { display: none !important; }
 
       .trailer-yt-note {
         text-align: center; font-size: 0.78rem; color: #5a5a70;
@@ -234,12 +252,32 @@ export function openTrailerModal(youtubeKey, movieTitle = 'Watch Trailer') {
 
   const modal   = document.getElementById('trailerModal');
   const iframe  = document.getElementById('trailerIframe');
+  const errorEl = document.getElementById('trailerError');
   const titleEl = document.getElementById('trailerMovieTitle');
 
   titleEl.textContent = `🎬 ${movieTitle} — Trailer`;
-
-  // autoplay=1 starts the video immediately; rel=0 hides related videos
-  iframe.src = `https://www.youtube.com/embed/${youtubeKey}?autoplay=1&rel=0&modestbranding=1`;
+  
+  if (!youtubeKey) {
+    // If there is no YouTube Key available (no trailer found on TMDB)
+    iframe.classList.add('hidden');
+    errorEl.classList.remove('hidden');
+    iframe.src = ''; 
+  } else {
+    // Show Iframe, Hide Error
+    iframe.classList.remove('hidden');
+    errorEl.classList.add('hidden');
+    
+    // KEY FIX: Use youtube-nocookie.com instead of youtube.com
+    // This bypasses Error 153 on HTTP localhost AND privacy/referrer restrictions.
+    // youtube-nocookie.com is YouTube's official privacy-enhanced embed domain.
+    iframe.src = `https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1&rel=0&modestbranding=1`;
+    
+    // Update the "open in YouTube" fallback link
+    const ytLink = document.getElementById('trailerYtLink');
+    if (ytLink) {
+      ytLink.href = `https://www.youtube.com/watch?v=${youtubeKey}`;
+    }
+  }
 
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';

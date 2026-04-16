@@ -209,14 +209,12 @@ class TMDBService:
         data = self._get(f"/movie/{tmdb_id}/videos")
         videos = data.get("results", [])
 
-        # Prefer official trailers on YouTube, fall back to any teaser
-        youtube_videos = [v for v in videos if v.get("site") == "YouTube"]
-        trailers = [v for v in youtube_videos if v.get("type") == "Trailer"]
-        teasers  = [v for v in youtube_videos if v.get("type") == "Teaser"]
+        # Prefer official trailers on YouTube. Do not fall back to teasers or clips as requested.
+        youtube_trailers = [v for v in videos if v.get("site") == "YouTube" and v.get("type") == "Trailer"]
 
-        # Pick the best video: official trailer > any trailer > teaser > first YT video
-        official = [v for v in trailers if v.get("official")]
-        best = (official or trailers or teasers or youtube_videos or [None])[0]
+        # Pick the best video: official trailer > any trailer
+        official = [v for v in youtube_trailers if v.get("official")]
+        best = (official or youtube_trailers or [None])[0]
 
         return {
             "trailer_key":  best.get("key", "") if best else "",
@@ -229,6 +227,7 @@ class TMDBService:
                     "official": v.get("official", False),
                     "site":     v.get("site"),
                 }
-                for v in youtube_videos[:10]
+                # fixed: using youtube_trailers instead of deleted youtube_videos
+                for v in youtube_trailers[:10]
             ],
         }
