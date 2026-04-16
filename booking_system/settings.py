@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback-insecure-key-change-me')
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
@@ -111,12 +111,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Single correct STATICFILES_DIRS — was duplicated before (bug fix)
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
-
-STATICFILES_DIRS = [
-BASE_DIR / "booking_system" / "static",
+    BASE_DIR / "booking_system" / "static",
 ]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -192,6 +189,7 @@ TMDB_READ_TOKEN = os.environ.get('TMDB_READ_TOKEN', '')
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "cinebook-tmdb-cache",   # avoids CacheKeyWarning with special chars
     }
 }
 
@@ -224,6 +222,19 @@ JAZZMIN_SETTINGS = {
 
 import sys
 if 'test' in sys.argv or 'runserver' in sys.argv:
-    # Use standard RAM while running local manage.py scripts so we don't crash 
-    # trying to connect to a Redis server that isn't running on your laptop!
-    CACHES['default'] = {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}
+    # Use standard RAM while running local manage.py scripts
+    CACHES['default'] = {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'cinebook-tmdb-cache',
+    }
+
+# ── Startup Validation ────────────────────────────────────────────────────────
+# Warn loudly if TMDB key is missing — this causes 503 errors on every trailer fetch.
+import warnings
+if not TMDB_API_KEY:
+    warnings.warn(
+        "[CineBook] TMDB_API_KEY is not set! Set it in .env (local) or "
+        "Environment Variables on Render. All TMDB API calls will return 503.",
+        RuntimeWarning,
+        stacklevel=2,
+    )

@@ -90,7 +90,10 @@ class TMDBService:
         Raises TMDBError on network failures or non-200 responses.
         """
         params = {**self._params, **(extra_params or {})}
-        cache_key = f"tmdb:{path}:{sorted(params.items())}"
+        # Use MD5 hash as cache key to avoid CacheKeyWarning from special chars
+        import hashlib, json
+        raw_key    = f"tmdb:{path}:{json.dumps(params, sort_keys=True)}"
+        cache_key  = "tmdb_" + hashlib.md5(raw_key.encode()).hexdigest()
 
         # Return from cache if fresh
         cached = cache.get(cache_key)
