@@ -405,6 +405,27 @@
       </form>
     </div>
   </div>
+  <!-- ── OTP Verification Modal ── -->
+  <div class="otp-overlay hidden" id="otpModal">
+    <div class="otp-card">
+      <button id="closeOtp" style="position: absolute; right: 20px; top: 20px; background: transparent; border: none; color: white; font-size: 1.2rem; cursor: pointer;">✕</button>
+      <div class="otp-icon">✉️</div>
+      <h2>Verify Your Email</h2>
+      <p class="otp-sub">We've sent a 6-digit code to <br><b id="otpEmailDisplay" style="color: #f0f0f0;"></b></p>
+      
+      <div class="otp-inputs">
+        <input type="text" class="otp-digit" maxlength="1" onkeyup="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+        <input type="text" class="otp-digit" maxlength="1" onkeyup="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+        <input type="text" class="otp-digit" maxlength="1" onkeyup="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+        <input type="text" class="otp-digit" maxlength="1" onkeyup="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+        <input type="text" class="otp-digit" maxlength="1" onkeyup="if(this.value && this.nextElementSibling) this.nextElementSibling.focus()" />
+        <input type="text" class="otp-digit" maxlength="1" />
+      </div>
+      
+      <div class="otp-error hidden" id="otpError" style="color: #f87171; font-size: 0.85rem; margin-bottom: 12px;"></div>
+      <button class="btn-book" id="verifyOtpBtn" style="width: 100%; border-radius: 50px; padding: 14px; background: linear-gradient(135deg, #f84464, #ff6b35); color: white; font-weight: bold; border: none; cursor: pointer;">Verify Account</button>
+    </div>
+  </div>
 
   <div class="toast hidden" id="toast">
     <span class="toast-icon">✅</span>
@@ -416,70 +437,5 @@
   </script>
   <script type="module" src="{% static 'js/movie-detail.js' %}"></script>
   <script type="module" src="{% static 'js/auth-ui.js' %}"></script>
-</body>
-</html>SON.stringify({ email, password }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || data.error || 'Login failed');
-        authToken   = data.access || data.token;
-        currentUser = { email, username: data.username || email.split('@')[0] };
-        localStorage.setItem('cinebook_token', authToken);
-        localStorage.setItem('cinebook_user', JSON.stringify(currentUser));
-        document.getElementById('authModal').classList.add('hidden');
-        renderNav();
-        document.getElementById('authGate').classList.add('hidden');
-        document.getElementById('bookEmail').value = email;
-        document.getElementById('bookName').value  = currentUser.username;
-        showToast(`Welcome ${currentUser.username}! 🎬`, false);
-      } catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
-    }
-    async function handleRegister(e) {
-      e.preventDefault();
-      const username = document.getElementById('regUsername').value.trim();
-      const email    = document.getElementById('regEmail').value.trim();
-      const password = document.getElementById('regPassword').value;
-      const err = document.getElementById('registerError');
-      err.classList.add('hidden');
-      
-      console.log("DATA SENT:", { username, email, password });
-      
-      try {
-        const res  = await fetch(`${API}/auth/register/`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, email, password }),
-        });
-        
-        const text = await res.text();
-        console.log("RAW RESPONSE:", text);
-        
-        let data;
-        try {
-            data = JSON.parse(text);
-        } catch {
-            throw new Error("Server returned non-JSON response");
-        }
-        
-        if (!res.ok) {
-            throw new Error(data.detail || data.error || JSON.stringify(data));
-        }
-        
-        showToast('Account created! Please login.', false);
-        switchTab('login');
-        document.getElementById('loginEmail').value = email;
-      } catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
-    }
-
-    /* ─── TOAST ─── */
-    let toastTimer;
-    function showToast(msg, isError) {
-      const t = document.getElementById('toast');
-      document.getElementById('toastIcon').textContent = isError ? '⚠️' : '✅';
-      document.getElementById('toastMsg').textContent  = msg;
-      t.classList.toggle('error', isError);
-      t.classList.remove('hidden');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => t.classList.add('hidden'), 4000);
-    }
-  </script>
 </body>
 </html>

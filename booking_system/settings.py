@@ -156,14 +156,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Email Backend
 # ==============================
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'nayakbhagyesh220@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_TIMEOUT = 10
-DEFAULT_FROM_EMAIL = 'nayakbhagyesh220@outlook.com' # Must match your SendGrid verified sender
+DEFAULT_FROM_EMAIL = 'nayakbhagyesh220@gmail.com' # Your Gmail sender
 
 # ==============================
 # Stripe Configuration
