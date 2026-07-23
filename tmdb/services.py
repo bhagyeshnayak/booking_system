@@ -64,7 +64,7 @@ class TMDBService:
         detail  = svc.get_movie_detail(27205)
     """
 
-    BASE_URL   = "https://api.themoviedb.org/3"
+    BASE_URL   = "https://api.tmdb.org/3"
     IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
     BACKDROP_BASE = "https://image.tmdb.org/t/p/w1280"
     CACHE_TTL  = 5 * 60  # 5 minutes
