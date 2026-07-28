@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: booking_system
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn booking_system.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: "False"

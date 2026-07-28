@@ -121,6 +121,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Define where collectstatic should dump all CSS and images so Whitenoise can serve them!
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Enable WhiteNoise storage and finders fallback so static files are always served in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+WHITENOISE_USE_FINDERS = True
+
+
 
 
 # ==============================
